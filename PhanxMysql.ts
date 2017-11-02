@@ -52,6 +52,51 @@ export class PhanxMysql {
         return db;
     }
 
+    public static closeAll(cb:Function=null):Promise<null> {
+        return new Promise((resolve) => {
+
+            PhanxMysql.openConnections.asyncForEach((i,conn,cbNext)=> {
+               if (conn != null)
+                   conn.close();
+               cbNext();
+            },() => {
+                resolve();
+            });
+
+        });
+    }
+
+    public static closePool(cb:Function=null):Promise<null> {
+
+        return new Promise((resolve,reject)=> {
+
+            let pool = PhanxMysql.pool;
+
+            if (pool != null) {
+
+                pool.end((err)=> {
+
+                    console.log("pool closed");
+                    console.error(err);
+
+                    if (cb != null)
+                        cb(err);
+                    else {
+                        if (err != null) {
+                            reject(err);
+                        } else
+                            resolve();
+                    }
+
+                });
+
+            }
+        });
+
+
+    }
+
+
     public static setAutoCloseMinutes(minutes:number):void {
 
         if (PhanxMysql.auto_closer_interval != null)
@@ -103,6 +148,10 @@ export class PhanxMysql {
     //#########################################################
     // Config Methods
     //#########################################################
+
+    public get throwErrors():Boolean {
+        return this._throwErrors;
+    }
 
     public set throwErrors(value:Boolean) {
         this._throwErrors = value;
@@ -177,6 +226,8 @@ export class PhanxMysql {
 
                 } else {
 
+                    //non pool connection
+
                     if (this._opened) {
 
                         let err = new Error("Database connection already open.");
@@ -231,6 +282,13 @@ export class PhanxMysql {
 
         });
 
+    }
+
+    /**
+     * @alias start(...)
+     */
+    public open(cb:(err?:any)=>void=null):Promise<null> {
+        return this.start(cb);
     }
 
 
@@ -313,17 +371,31 @@ export class PhanxMysql {
 
     }
 
+    /**
+     * @alias end(...)
+     */
+    public close(cb:()=>void=null):Promise<null> {
+        return this.end(cb);
+    }
+
+
+
+
+    //##############################################
+    // query method
+    //##############################################
 
     /**
      * Query the database.
      *
      * @param {String} sql
      * @param {Array<any>} paras - (optional)
-     * @param {Function} cb - (optional) cb(err:any,result:Array<any>)
+     * @param {Function} cb - (optional) cb(err:any,result:Array<any>,cbResume?:Function)
      * @returns {Promise<any>} - result:Array<any>
      */
     public query(sql:String, paras:Array<any>=null,
-                 cb:(err:any,result?:Array<any>)=>void=null):Promise<any>
+                 cb:(err:any,result?:Array<any>,cbResume?:Function)=>void=null)
+    :Promise<any>
     {
 
         this._errorStack = new Error().stack;
@@ -338,7 +410,9 @@ export class PhanxMysql {
                 let err:Error = new Error("Database Connection is not open.");
                 console.error(err);
 
-                this.handleCallback(cb, resolve, reject, err);
+                this.handleCallback(cb, resolve, reject, err, null,()=> {
+                    resolve(null);
+                });
 
 
                 return;
@@ -365,7 +439,9 @@ export class PhanxMysql {
 
                     console.error("Database Error (" + elapsed + "s): ", errObj);
 
-                    this.handleCallback(cb, resolve, reject, errObj);
+                    this.handleCallback(cb, resolve, reject, errObj, null,()=> {
+                        resolve(null);
+                    });
 
 
                     return;
@@ -382,7 +458,10 @@ export class PhanxMysql {
 
                 this._resultCount = this._result.length;
 
-                this.handleCallback(cb, resolve, reject, null, this._result);
+                this.handleCallback(cb, resolve, reject, null, this._result,
+                    ()=> {
+                        resolve(this._result);
+                    });
 
 
             });
@@ -401,20 +480,24 @@ export class PhanxMysql {
      *
      * @param {String} sql
      * @param {Array<any>} paras - (optional)
-     * @param {Function} cb - (optional) cb(err:any,row:any)
+     * @param {Function} cb - (optional) cb(err:any,row:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
     public selectRow(sql:String, paras:Array<any>=null,
-                     cb:(err:any,row:any)=>void=null):Promise<any>
+                     cb:(err:any,row:any,cbResume?:Function)=>void=null):Promise<any>
     {
         return new Promise((resolve, reject) => {
 
             this.query(sql, paras, (err:any, result:any):void => {
                 if (err || result == null || result.length < 1) {
-                    this.handleCallback(cb, resolve, reject, err, result);
+                    this.handleCallback(cb, resolve, reject, err, result, () => {
+                        resolve(result);
+                    });
                     return;
                 }
-                this.handleCallback(cb, resolve, reject, null, result[0]);
+                this.handleCallback(cb, resolve, reject, null, result[0],() => {
+                    resolve(result[0]);
+                });
             })
 
         });
@@ -425,7 +508,8 @@ export class PhanxMysql {
      * @alias query(...)
      */
     public selectArray(sql:String, paras:Array<any>=null,
-                       cb:(err:any,row:Array<any>)=>void=null):Promise<any>
+                       cb:(err:any,row:Array<any>,cbResume?:Function)=>void=null)
+    :Promise<any>
     {
         return this.query(sql, paras, cb);
     }
@@ -437,30 +521,30 @@ export class PhanxMysql {
     /**
      * Transaction Begin Helper method.
      *
-     * @param {Function} cb - (optional) cb(err:any,result:any)
+     * @param {Function} cb - (optional) cb(err:any,result:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
-    public begin(cb:(err:any,result:any)=>void=null):Promise<any> {
+    public begin(cb:(err:any,result:any,cbResume?:Function)=>void=null):Promise<any> {
         return this.query("START TRANSACTION;",null,cb);
     }
 
     /**
      * Transaction Commit Helper method.
      *
-     * @param {Function} cb - (optional) cb(err:any,result:any)
+     * @param {Function} cb - (optional) cb(err:any,result:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
-    public commit(cb:(err:any,result:any)=>void=null):Promise<any> {
+    public commit(cb:(err:any,result:any,cbResume?:Function)=>void=null):Promise<any> {
         return this.query("COMMIT;", null, cb);
     }
 
     /**
      * Transaction Rollback Helper method.
      *
-     * @param {Function} cb - (optional) cb(err:any,result:any)
+     * @param {Function} cb - (optional) cb(err:any,result:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
-    public rollback(cb:(err:any,result:any)=>void=null):Promise<any> {
+    public rollback(cb:(err:any,result:any,cbResume?:Function)=>void=null):Promise<any> {
         return this.query("ROLLBACK;", null, cb);
     }
 
@@ -542,6 +626,10 @@ export class PhanxMysql {
         return row;
     }
 
+    public hasRows():Boolean {
+       return (this.cursor < this.rowCount);
+    }
+
     /**
      * @ignore
      * @internal
@@ -613,16 +701,19 @@ export class PhanxMysql {
      * @param {Function} reject - (optional) promise reject
      * @param err - (optional) Error
      * @param result - (optional) Result object
+     * @param {Function} cbResume - (optional) cb() to resolve from callback
      */
     private handleCallback(cb:Function, resolve:Function, reject:Function=null,
-                           err:any=null, result:any=null):void {
+                           err:any=null, result:any=null,
+                           cbResume:Function=null):void
+    {
         this._errorLast = err;
 
         if (err==null)
             this._errorStack = "";
 
         if (cb != null)
-            cb(err, result);
+            cb(err, result, cbResume);
         else {
             if (err != null) {
                 if (this._throwErrors && reject != null)

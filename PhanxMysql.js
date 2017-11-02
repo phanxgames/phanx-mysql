@@ -54,6 +54,37 @@ class PhanxMysql {
             return db;
         });
     }
+    static closeAll(cb = null) {
+        return new Promise((resolve) => {
+            PhanxMysql.openConnections.asyncForEach((i, conn, cbNext) => {
+                if (conn != null)
+                    conn.close();
+                cbNext();
+            }, () => {
+                resolve();
+            });
+        });
+    }
+    static closePool(cb = null) {
+        return new Promise((resolve, reject) => {
+            let pool = PhanxMysql.pool;
+            if (pool != null) {
+                pool.end((err) => {
+                    console.log("pool closed");
+                    console.error(err);
+                    if (cb != null)
+                        cb(err);
+                    else {
+                        if (err != null) {
+                            reject(err);
+                        }
+                        else
+                            resolve();
+                    }
+                });
+            }
+        });
+    }
     static setAutoCloseMinutes(minutes) {
         if (PhanxMysql.auto_closer_interval != null)
             clearInterval(PhanxMysql.auto_closer_interval);
@@ -92,6 +123,9 @@ class PhanxMysql {
     //#########################################################
     // Config Methods
     //#########################################################
+    get throwErrors() {
+        return this._throwErrors;
+    }
     set throwErrors(value) {
         this._throwErrors = value;
     }
@@ -139,6 +173,7 @@ class PhanxMysql {
                     });
                 }
                 else {
+                    //non pool connection
                     if (this._opened) {
                         let err = new Error("Database connection already open.");
                         console.error(err);
@@ -166,6 +201,12 @@ class PhanxMysql {
                 this.handleCallback(cb, resolve, reject, err);
             }
         });
+    }
+    /**
+     * @alias start(...)
+     */
+    open(cb = null) {
+        return this.start(cb);
     }
     /**
      * Closes database connection.
@@ -218,11 +259,20 @@ class PhanxMysql {
         });
     }
     /**
+     * @alias end(...)
+     */
+    close(cb = null) {
+        return this.end(cb);
+    }
+    //##############################################
+    // query method
+    //##############################################
+    /**
      * Query the database.
      *
      * @param {String} sql
      * @param {Array<any>} paras - (optional)
-     * @param {Function} cb - (optional) cb(err:any,result:Array<any>)
+     * @param {Function} cb - (optional) cb(err:any,result:Array<any>,cbResume?:Function)
      * @returns {Promise<any>} - result:Array<any>
      */
     query(sql, paras = null, cb = null) {
@@ -233,7 +283,9 @@ class PhanxMysql {
             if (this._client == null) {
                 let err = new Error("Database Connection is not open.");
                 console.error(err);
-                this.handleCallback(cb, resolve, reject, err);
+                this.handleCallback(cb, resolve, reject, err, null, () => {
+                    resolve(null);
+                });
                 return;
             }
             let timeStart = Util_1.Util.timeStart();
@@ -250,7 +302,9 @@ class PhanxMysql {
                         errObj.message = err.message;
                     }
                     console.error("Database Error (" + elapsed + "s): ", errObj);
-                    this.handleCallback(cb, resolve, reject, errObj);
+                    this.handleCallback(cb, resolve, reject, errObj, null, () => {
+                        resolve(null);
+                    });
                     return;
                 }
                 console.log("Query completed in " + elapsed + " seconds.");
@@ -260,7 +314,9 @@ class PhanxMysql {
                 else
                     this._result = [result];
                 this._resultCount = this._result.length;
-                this.handleCallback(cb, resolve, reject, null, this._result);
+                this.handleCallback(cb, resolve, reject, null, this._result, () => {
+                    resolve(this._result);
+                });
             });
         });
     }
@@ -272,17 +328,21 @@ class PhanxMysql {
      *
      * @param {String} sql
      * @param {Array<any>} paras - (optional)
-     * @param {Function} cb - (optional) cb(err:any,row:any)
+     * @param {Function} cb - (optional) cb(err:any,row:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
     selectRow(sql, paras = null, cb = null) {
         return new Promise((resolve, reject) => {
             this.query(sql, paras, (err, result) => {
                 if (err || result == null || result.length < 1) {
-                    this.handleCallback(cb, resolve, reject, err, result);
+                    this.handleCallback(cb, resolve, reject, err, result, () => {
+                        resolve(result);
+                    });
                     return;
                 }
-                this.handleCallback(cb, resolve, reject, null, result[0]);
+                this.handleCallback(cb, resolve, reject, null, result[0], () => {
+                    resolve(result[0]);
+                });
             });
         });
     }
@@ -299,7 +359,7 @@ class PhanxMysql {
     /**
      * Transaction Begin Helper method.
      *
-     * @param {Function} cb - (optional) cb(err:any,result:any)
+     * @param {Function} cb - (optional) cb(err:any,result:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
     begin(cb = null) {
@@ -308,7 +368,7 @@ class PhanxMysql {
     /**
      * Transaction Commit Helper method.
      *
-     * @param {Function} cb - (optional) cb(err:any,result:any)
+     * @param {Function} cb - (optional) cb(err:any,result:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
     commit(cb = null) {
@@ -317,7 +377,7 @@ class PhanxMysql {
     /**
      * Transaction Rollback Helper method.
      *
-     * @param {Function} cb - (optional) cb(err:any,result:any)
+     * @param {Function} cb - (optional) cb(err:any,result:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
     rollback(cb = null) {
@@ -390,6 +450,9 @@ class PhanxMysql {
         this.cursor++;
         return row;
     }
+    hasRows() {
+        return (this.cursor < this.rowCount);
+    }
     /**
      * Async (non-blocking) loop through last query's rows.
      *
@@ -441,13 +504,14 @@ class PhanxMysql {
      * @param {Function} reject - (optional) promise reject
      * @param err - (optional) Error
      * @param result - (optional) Result object
+     * @param {Function} cbResume - (optional) cb() to resolve from callback
      */
-    handleCallback(cb, resolve, reject = null, err = null, result = null) {
+    handleCallback(cb, resolve, reject = null, err = null, result = null, cbResume = null) {
         this._errorLast = err;
         if (err == null)
             this._errorStack = "";
         if (cb != null)
-            cb(err, result);
+            cb(err, result, cbResume);
         else {
             if (err != null) {
                 if (this._throwErrors && reject != null)
