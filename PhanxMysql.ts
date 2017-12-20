@@ -745,7 +745,7 @@ export interface IDbConfig {
     mysql:IMysqlConfig,
     autoCloseMinutes:number
 }
-interface IMysqlConfig {
+export interface IMysqlConfig {
     host:String;
     database:String;
     user:String;
