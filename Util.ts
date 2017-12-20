@@ -3,40 +3,44 @@ import {Dictionary} from "dictionaryjs";
 
 export class Util {
 
-    static generateToken(length:Number, collection:Dictionary):String {
-        let found:Boolean = false;
-        let token:String = "";
+    static generateToken(length:number,
+                         collection:Dictionary<string,boolean>):string
+    {
+        let found:boolean = false;
+        let token:string = "";
         while (!found) {
             token = Util.generateRandomString(length);
             if (collection==null || (collection!=null && !collection.has(token))) {
                 found = true;
             }
         }
+        if (collection!=null)
+            collection.set(token,true);
         return token;
     }
 
-    static generateRandomString(length:Number):String {
-        let s:String = '';
+    static generateRandomString(length:number):string {
+        let s:string = '';
         let randomchar:Function =function(){
-            var n= Math.floor(Math.random()*62);
+            let n:number = Math.floor(Math.random()*62);
             if(n<10) return n; //1-10
             if(n<36) return String.fromCharCode(n+55); //A-Z
             return String.fromCharCode(n+61); //a-z
-        }
+        };
         while(s.length< length) s+= randomchar();
         return s;
     }
 
-    static getTimestamp():Number {
+    static getTimestamp():number {
         return new Date().getTime();
     }
 
-    static now():String {
+    static now():string {
         return Util.formatDateTime();
     }
 
-    static formatDateTime(date:String=null) {
-        let input = new Date(date);
+    static formatDateTime(date:string=null) {
+        let input:Date = new Date(date);
         return ""+(input.getFullYear())+"-"+
             Util.pad(input.getMonth()+1,2,'0')+"-"+
             Util.pad(input.getDate(),2,'0')+" "+
@@ -52,8 +56,8 @@ export class Util {
             new Array(width - input.length + 1).join(padding) + input;
     }
 
-    static getTimeDiff(ts: Number, unit: string):Number {
-        let now:Number = Util.getTimestamp();
+    static getTimeDiff(ts: number, unit: string):number {
+        let now:number = Util.getTimestamp();
         if (ts == null || now == null || ts <= 0 || now <= 0) return 0;
         let lastDate:number = new Date(ts).getTime();
         let nowDate:number = new Date(now).getTime();
@@ -91,7 +95,7 @@ export class Util {
     public static timeStart():[number,number] {
         return process.hrtime();
     }
-    public static timeEnd(start:[number,number]):String {
+    public static timeEnd(start:[number,number]):string {
         return (process.hrtime(start)[1] / 1000000000).toFixed(5);
     }
 

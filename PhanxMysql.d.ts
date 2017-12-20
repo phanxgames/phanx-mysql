@@ -20,12 +20,12 @@ export declare class PhanxMysql {
     constructor(config?: IDbConfig);
     static config: IDbConfig;
     static createAndStart(): Promise<PhanxMysql>;
-    static closeAll(cb?: Function): Promise<null>;
-    static closePool(cb?: Function): Promise<null>;
+    static closeAll(cb?: Function): Promise<any>;
+    static closePool(cb?: Function): Promise<any>;
     static setAutoCloseMinutes(minutes: number): void;
-    throwErrors: Boolean;
+    throwErrors: boolean;
     config: IDbConfig;
-    usePool(): Boolean;
+    usePool(): boolean;
     /**
      * Opens database connection.
      *
@@ -51,26 +51,26 @@ export declare class PhanxMysql {
     /**
      * Query the database.
      *
-     * @param {String} sql
+     * @param {string} sql
      * @param {Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,result:Array<any>,cbResume?:Function)
      * @returns {Promise<any>} - result:Array<any>
      */
-    query(sql: String, paras?: Array<any>, cb?: (err: any, result?: Array<any>, cbResume?: Function) => void): Promise<any>;
+    query(sql: string, paras?: Array<any>, cb?: (err: any, result?: Array<any>, cbResume?: Function) => void): Promise<any>;
     /**
      * Select the first row from query.
      *
-     * @param {String} sql
+     * @param {string} sql
      * @param {Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,row:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
-    selectRow(sql: String, paras?: Array<any>, cb?: (err: any, row: any, cbResume?: Function) => void): Promise<any>;
+    selectRow(sql: string, paras?: Array<any>, cb?: (err: any, row: any, cbResume?: Function) => void): Promise<any>;
     /**
      * @ignore
      * @alias query(...)
      */
-    selectArray(sql: String, paras?: Array<any>, cb?: (err: any, row: Array<any>, cbResume?: Function) => void): Promise<any>;
+    selectArray(sql: string, paras?: Array<any>, cb?: (err: any, row: Array<any>, cbResume?: Function) => void): Promise<any>;
     /**
      * Transaction Begin Helper method.
      *
@@ -96,18 +96,18 @@ export declare class PhanxMysql {
      * Global Unique Identifier for this connection.
      * @returns {String}
      */
-    readonly guid: String;
+    readonly guid: string;
     /**
      * The stack trace for the start of this connection.
      * Useful to narrow down where this connection was created if left open.
      * @returns {String}
      */
-    readonly startStack: String;
+    readonly startStack: string;
     /**
      * Returns whether the connection is open or not.
      * @returns {Boolean}
      */
-    readonly opened: Boolean;
+    readonly opened: boolean;
     /**
      * Timestamp of when connection was opened. Linux epoch.
      * @returns {number}
@@ -132,8 +132,8 @@ export declare class PhanxMysql {
      * Returns the next row from the last query and moves the cursor to the next.
      * @returns {Object}
      */
-    readonly row: Object;
-    hasRows(): Boolean;
+    readonly row: object;
+    hasRows(): boolean;
     /**
      * @ignore
      * @internal
@@ -167,14 +167,14 @@ export declare class PhanxMysql {
     private generateGuid();
 }
 export interface IDbConfig {
-    usePool: Boolean;
+    usePool: boolean;
     mysql: IMysqlConfig;
     autoCloseMinutes: number;
 }
 export interface IMysqlConfig {
-    host: String;
-    database: String;
-    user: String;
-    password: String;
-    connectionLimit: Number;
+    host: string;
+    database: string;
+    user: string;
+    password: string;
+    connectionLimit: number;
 }

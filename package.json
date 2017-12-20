@@ -1,13 +1,13 @@
 {
   "name": "phanx-mysql",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MySQL database wrapper that provides async/await promises.",
   "main": "PhanxMysql.js",
   "typings": "PhanxMysql.d.ts",
   "author": "Henry Price <phanxgames@gmail.com>",
   "dependencies": {
     "@types/node": "^8.0.47",
-    "dictionaryjs": "^1.0.2",
+    "dictionaryjs": "^1.0.6",
     "mysql": "^2.15.0"
   },
   "engines": {

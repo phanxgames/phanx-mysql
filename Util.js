@@ -10,12 +10,14 @@ class Util {
                 found = true;
             }
         }
+        if (collection != null)
+            collection.set(token, true);
         return token;
     }
     static generateRandomString(length) {
         let s = '';
         let randomchar = function () {
-            var n = Math.floor(Math.random() * 62);
+            let n = Math.floor(Math.random() * 62);
             if (n < 10)
                 return n; //1-10
             if (n < 36)

@@ -12,24 +12,25 @@ export class PhanxMysql {
     //static
     private static pool:any = null;
     private static dbConfig:IDbConfig = null;
-    private static dictTokens:Dictionary = new Dictionary();
-    private static openConnections:Dictionary = new Dictionary();
+    private static dictTokens:Dictionary<string,boolean> = new Dictionary<string,boolean>();
+    private static openConnections:Dictionary<string,PhanxMysql> =
+        new Dictionary<string,PhanxMysql>();
     private static auto_closer_minutes:number = 0;
     private static auto_closer_interval:any = null;
 
     //data set
-    private _startStack:String = null;
-    private _errorStack:String = null;
+    private _startStack:string = null;
+    private _errorStack:string = null;
     private _result:Array<any> = [];
-    private _resultCount:Number = 0;
+    private _resultCount:number = 0;
     private _errorLast:any = null;
     public cursor:number = 0;
 
     //properties
-    private _opened:Boolean = false;
-    private _openedTimestamp:Number = 0;
-    private _guid:String = null;
-    private _throwErrors:Boolean = true;
+    private _opened:boolean = false;
+    private _openedTimestamp:number = 0;
+    private _guid:string = null;
+    private _throwErrors:boolean = true;
 
     constructor(config:IDbConfig=null) {
         this.config = config;
@@ -47,26 +48,24 @@ export class PhanxMysql {
     }
 
     public static async createAndStart():Promise<PhanxMysql> {
-        let db = new PhanxMysql();
+        let db:PhanxMysql = new PhanxMysql();
         await db.start();
         return db;
     }
 
-    public static closeAll(cb:Function=null):Promise<null> {
-        return new Promise((resolve) => {
+    public static async closeAll(cb:Function=null):Promise<any> {
 
-            PhanxMysql.openConnections.asyncForEach((i,conn,cbNext)=> {
-               if (conn != null)
-                   conn.close();
-               cbNext();
-            },() => {
-                resolve();
-            });
+        for (let conn of PhanxMysql.openConnections) {
+            if (conn != null)
+                await conn.close();
+        }
 
-        });
+        if (cb!=null)
+            cb();
+
     }
 
-    public static closePool(cb:Function=null):Promise<null> {
+    public static closePool(cb:Function=null):Promise<any> {
 
         return new Promise((resolve,reject)=> {
 
@@ -103,19 +102,18 @@ export class PhanxMysql {
             clearInterval(PhanxMysql.auto_closer_interval);
 
         PhanxMysql.auto_closer_minutes = minutes;
-        let enabled:Boolean = (minutes>0);
+        let enabled:boolean = (minutes>0);
 
         if (enabled) {
             PhanxMysql.auto_closer_interval = setInterval(() => {
 
-                let outlog = "";
-                let counter = 0;
+                let outlog:string = "";
+                let counter:number = 0;
 
-                PhanxMysql.openConnections.asyncForEach(function(guid,db,cbNext) {
-
+                for (let db of PhanxMysql.openConnections) {
                     counter++;
                     if (db.opened) {
-                        let minutes = Util.getTimeDiff(db.openedTime,"min");
+                        let minutes:number = Util.getTimeDiff(db.openedTime,"min");
                         if (minutes > PhanxMysql.auto_closer_minutes) {
                             outlog += "\n[" + db.guid + "] Db Opened : " + minutes +
                                 " minutes\n" + db.startStack+"\n";
@@ -124,19 +122,18 @@ export class PhanxMysql {
                             db.end();
                         }
                     }
-                    cbNext();
+                }
 
-                },function() {
-                    if (outlog!="") {
-                        console.error("----------------------------------------\n" +
-                            "**** " + counter +
-                            " Database Connection Auto-Closed ****" + outlog +
-                            "\n----------------------------------------");
+                if (outlog!="") {
+                    console.error("----------------------------------------\n" +
+                        "**** " + counter +
+                        " Database Connection Auto-Closed ****" + outlog +
+                        "\n----------------------------------------");
 
-                    } else if (counter > 0) {
-                        console.log("Database connections still opened ("+counter+").");
-                    }
-                });
+                } else if (counter > 0) {
+                    console.log("Database connections still opened ("+counter+").");
+                }
+
 
             }, 10000);
         }
@@ -149,11 +146,11 @@ export class PhanxMysql {
     // Config Methods
     //#########################################################
 
-    public get throwErrors():Boolean {
+    public get throwErrors():boolean {
         return this._throwErrors;
     }
 
-    public set throwErrors(value:Boolean) {
+    public set throwErrors(value:boolean) {
         this._throwErrors = value;
     }
 
@@ -170,7 +167,7 @@ export class PhanxMysql {
     }
 
 
-    public usePool():Boolean {
+    public usePool():boolean {
         return (this.config.usePool==true);
     }
 
@@ -186,9 +183,7 @@ export class PhanxMysql {
      */
     public start(cb:(err?:any)=>void=null):Promise<null> {
 
-        this._startStack =
-        this._errorStack = new Error().stack;
-
+        this._startStack = this._errorStack = new Error().stack;
 
         return new Promise((resolve, reject) => {
 
@@ -230,7 +225,7 @@ export class PhanxMysql {
 
                     if (this._opened) {
 
-                        let err = new Error("Database connection already open.");
+                        let err:Error = new Error("Database connection already open.");
                         console.error(err);
 
                         this.handleCallback(cb, resolve, reject, err);
@@ -310,7 +305,7 @@ export class PhanxMysql {
 
             if (this._openedTimestamp > 0) {
 
-                let elapsed:Number = Util.getTimeDiff(this._openedTimestamp, "ms");
+                let elapsed:number = Util.getTimeDiff(this._openedTimestamp, "ms");
 
                 console.log("Connection released after in use for " + elapsed + " ms.");
 
@@ -388,14 +383,14 @@ export class PhanxMysql {
     /**
      * Query the database.
      *
-     * @param {String} sql
+     * @param {string} sql
      * @param {Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,result:Array<any>,cbResume?:Function)
      * @returns {Promise<any>} - result:Array<any>
      */
-    public query(sql:String, paras:Array<any>=null,
+    public query(sql:string, paras:Array<any>=null,
                  cb:(err:any,result?:Array<any>,cbResume?:Function)=>void=null)
-    :Promise<any>
+                :Promise<any>
     {
 
         this._errorStack = new Error().stack;
@@ -422,7 +417,7 @@ export class PhanxMysql {
 
             this._client.query(sql,paras, (err:Error, result:Object):void => {
 
-                let elapsed:String = Util.timeEnd(timeStart);
+                let elapsed:string = Util.timeEnd(timeStart);
 
                 if (err || result == null) {
 
@@ -478,12 +473,12 @@ export class PhanxMysql {
     /**
      * Select the first row from query.
      *
-     * @param {String} sql
+     * @param {string} sql
      * @param {Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,row:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
-    public selectRow(sql:String, paras:Array<any>=null,
+    public selectRow(sql:string, paras:Array<any>=null,
                      cb:(err:any,row:any,cbResume?:Function)=>void=null):Promise<any>
     {
         return new Promise((resolve, reject) => {
@@ -507,7 +502,7 @@ export class PhanxMysql {
      * @ignore
      * @alias query(...)
      */
-    public selectArray(sql:String, paras:Array<any>=null,
+    public selectArray(sql:string, paras:Array<any>=null,
                        cb:(err:any,row:Array<any>,cbResume?:Function)=>void=null)
     :Promise<any>
     {
@@ -556,7 +551,7 @@ export class PhanxMysql {
      * Global Unique Identifier for this connection.
      * @returns {String}
      */
-    public get guid():String {
+    public get guid():string {
         return this._guid;
     }
 
@@ -565,7 +560,7 @@ export class PhanxMysql {
      * Useful to narrow down where this connection was created if left open.
      * @returns {String}
      */
-    public get startStack():String {
+    public get startStack():string {
         return this._startStack;
     }
 
@@ -573,7 +568,7 @@ export class PhanxMysql {
      * Returns whether the connection is open or not.
      * @returns {Boolean}
      */
-    public get opened():Boolean {
+    public get opened():boolean {
         return this._opened;
     }
 
@@ -618,15 +613,15 @@ export class PhanxMysql {
      * Returns the next row from the last query and moves the cursor to the next.
      * @returns {Object}
      */
-    public get row():Object {
+    public get row():object {
         if (this.cursor >= this.rowCount)
             return null;
-        let row:Object = this._result[this.cursor];
+        let row:object = this._result[this.cursor];
         this.cursor++;
         return row;
     }
 
-    public hasRows():Boolean {
+    public hasRows():boolean {
        return (this.cursor < this.rowCount);
     }
 
@@ -741,22 +736,22 @@ export class PhanxMysql {
 
 
 export interface IDbConfig {
-    usePool:Boolean,
+    usePool:boolean,
     mysql:IMysqlConfig,
     autoCloseMinutes:number
 }
 export interface IMysqlConfig {
-    host:String;
-    database:String;
-    user:String;
-    password:String;
-    connectionLimit:Number;
+    host:string;
+    database:string;
+    user:string;
+    password:string;
+    connectionLimit:number;
 }
 interface IDbError {
-    stack:String;
-    sql:String;
+    stack:string;
+    sql:string;
     paras:Array<any>;
-    message:String;
+    message:string;
 }
 
 

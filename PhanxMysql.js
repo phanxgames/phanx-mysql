@@ -55,14 +55,13 @@ class PhanxMysql {
         });
     }
     static closeAll(cb = null) {
-        return new Promise((resolve) => {
-            PhanxMysql.openConnections.asyncForEach((i, conn, cbNext) => {
+        return __awaiter(this, void 0, void 0, function* () {
+            for (let conn of PhanxMysql.openConnections) {
                 if (conn != null)
-                    conn.close();
-                cbNext();
-            }, () => {
-                resolve();
-            });
+                    yield conn.close();
+            }
+            if (cb != null)
+                cb();
         });
     }
     static closePool(cb = null) {
@@ -94,7 +93,7 @@ class PhanxMysql {
             PhanxMysql.auto_closer_interval = setInterval(() => {
                 let outlog = "";
                 let counter = 0;
-                PhanxMysql.openConnections.asyncForEach(function (guid, db, cbNext) {
+                for (let db of PhanxMysql.openConnections) {
                     counter++;
                     if (db.opened) {
                         let minutes = Util_1.Util.getTimeDiff(db.openedTime, "min");
@@ -105,18 +104,16 @@ class PhanxMysql {
                             db.end();
                         }
                     }
-                    cbNext();
-                }, function () {
-                    if (outlog != "") {
-                        console.error("----------------------------------------\n" +
-                            "**** " + counter +
-                            " Database Connection Auto-Closed ****" + outlog +
-                            "\n----------------------------------------");
-                    }
-                    else if (counter > 0) {
-                        console.log("Database connections still opened (" + counter + ").");
-                    }
-                });
+                }
+                if (outlog != "") {
+                    console.error("----------------------------------------\n" +
+                        "**** " + counter +
+                        " Database Connection Auto-Closed ****" + outlog +
+                        "\n----------------------------------------");
+                }
+                else if (counter > 0) {
+                    console.log("Database connections still opened (" + counter + ").");
+                }
             }, 10000);
         }
     }
@@ -151,8 +148,7 @@ class PhanxMysql {
      * @returns {Promise<null>}
      */
     start(cb = null) {
-        this._startStack =
-            this._errorStack = new Error().stack;
+        this._startStack = this._errorStack = new Error().stack;
         return new Promise((resolve, reject) => {
             try {
                 if (this.usePool()) {
@@ -270,7 +266,7 @@ class PhanxMysql {
     /**
      * Query the database.
      *
-     * @param {String} sql
+     * @param {string} sql
      * @param {Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,result:Array<any>,cbResume?:Function)
      * @returns {Promise<any>} - result:Array<any>
@@ -326,7 +322,7 @@ class PhanxMysql {
     /**
      * Select the first row from query.
      *
-     * @param {String} sql
+     * @param {string} sql
      * @param {Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,row:any,cbResume?:Function)
      * @returns {Promise<any>}
