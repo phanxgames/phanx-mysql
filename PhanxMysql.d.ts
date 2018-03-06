@@ -1,3 +1,5 @@
+import { PhanxInsert } from "./PhanxInsert";
+import { PhanxUpdate } from "./PhanxUpdate";
 export declare class PhanxMysql {
     private _config;
     private _client;
@@ -71,6 +73,79 @@ export declare class PhanxMysql {
      * @alias query(...)
      */
     selectArray(sql: string, paras?: Array<any>, cb?: (err: any, row: Array<any>, cbResume?: Function) => void): Promise<any>;
+    /**
+     * Insert Helper Method.
+     * Example:
+     * Inserts a new record with id of 1 and name of test.
+     * <pre>
+     *     ...
+     *     let insert:PhanxInsert = db.insert("test",{id:1,name:"test"});
+     *     await insert.run();
+     *     ...
+     * </pre>
+     *
+     * @param {string} table - table name
+     * @param {any} row (optional) - object of key/value column name/values.
+     * @returns {PhanxInsert}
+     */
+    insert(table: string, values?: any): PhanxInsert;
+    /**
+     * Update helper method.
+     * Example:
+     * Updates record id=15 changing name to "test":
+     * <pre>
+     *     ...
+     *     let update:PhanxUpdate = db.update("test","id=?",[15],{name:"test"});
+     *     await update.run();
+     *     ...
+     *     //another way to do the same:
+     *     let update:PhanxUpdate = db.update("test",{id:15},null,{name:"test"});
+     *     await update.run();
+     *     ...
+     * </pre>
+     * @param {string} table - table name
+     * @param {any|string} where - the where clause:
+     *                          as string for sql, or
+     *                          column/value pair object for strict equals
+     * @param {Array<any>} whereParams (optional) used with where as string
+     *                              to replace the ? params you may use.
+     * @param {any} values (optional) - column/value pair object to set values
+     * @returns {PhanxUpdate}
+     */
+    update(table: string, where: any, whereParams?: Array<any>, values?: any): PhanxUpdate;
+    /**
+     * Calls insert and runs automatically.
+     * Usage:
+     * <pre>
+     *     ...
+     *     await db.insertAndRun("test",{name:"test"});
+     *     ...
+     * </pre>
+     *
+     * @param {string} table - table name
+     * @param {any} row - object of key/value column name/values.
+     * @returns {Promise<any>}
+     */
+    insertAndRun(table: string, values: any): Promise<any>;
+    /**
+     * Calls update method and runs automatically.
+     * Usage:
+     * <pre>
+     *     ...
+     *     await db.updateAndRun("test",{id:1},null,{name:"test"});
+     *     ...
+     * </pre>
+     *
+     * @param {string} table - table name
+     * @param {any|string} where - the where clause:
+     *                          as string for sql, or
+     *                          column/value pair object for strict equals
+     * @param {Array<any>} whereParams (optional) used with where as string
+     *                              to replace the ? params you may use.
+     * @param {any} values (optional) - column/value pair object to set values
+     * @returns {Promise<any>}
+     */
+    updateAndRun(table: string, where: any, whereParams?: Array<any>, values?: any): Promise<any>;
     /**
      * Transaction Begin Helper method.
      *

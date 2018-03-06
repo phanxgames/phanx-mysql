@@ -205,6 +205,50 @@ Enabling auto closer in the dbConfig.json file allows database connections that 
 
 By default this is not enabled, however you may want to keep this enabled and watch the console to see if the auto closer picks up on any open connections so you can address it and properly close it when you are done.
 
+## Insert Helper
+
+Optional helper to assist in inserting simple queries into your database.
+
+3 Ways to do the same thing:
+
+<pre>
+await db.insert("test", {name:"Tester"}).finalize();
+</pre>
+
+<pre>
+let insert:PhanxInsert = await db.insert("test");
+insert.row({name:"Tester"});
+await insert.finalize();
+</pre>
+
+<pre>
+await db.insertAndRun("test", {name:"Tester"});
+</pre>
+
+Note: "id" column is omitted because this table has an auto-increment on this column.
+
+## Update Helper
+
+Optional helper to assist in updating simple queries in your database.
+
+3 Ways to do the same thing:
+
+<pre>
+await db.update("test", {id:1}, null, {name:"Tester"}).finalize();
+</pre>
+
+<pre>
+let update:PhanxUpdate = await db.update("test", "id=?", [1]);
+update.row({name:"Tester"});
+await update.finalize();
+</pre>
+
+<pre>
+await db.updateAndRun("test", {id:1}, null, {name:"Tester"});
+//or
+await db.updateAndRun("test", "id=?", [1], {name:"Tester"});
+</pre>
+
 ## Module Dependencies
 
 - [mysql](https://github.com/mysqljs/mysql)

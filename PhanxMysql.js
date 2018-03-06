@@ -11,6 +11,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dictionaryjs_1 = require("dictionaryjs");
 const Mysql = require("mysql");
 const Util_1 = require("./Util");
+const PhanxInsert_1 = require("./PhanxInsert");
+const PhanxUpdate_1 = require("./PhanxUpdate");
 class PhanxMysql {
     constructor(config = null) {
         //references
@@ -348,6 +350,90 @@ class PhanxMysql {
      */
     selectArray(sql, paras = null, cb = null) {
         return this.query(sql, paras, cb);
+    }
+    //#########################################################
+    // Insert/Update Helper Methods
+    //#########################################################
+    /**
+     * Insert Helper Method.
+     * Example:
+     * Inserts a new record with id of 1 and name of test.
+     * <pre>
+     *     ...
+     *     let insert:PhanxInsert = db.insert("test",{id:1,name:"test"});
+     *     await insert.run();
+     *     ...
+     * </pre>
+     *
+     * @param {string} table - table name
+     * @param {any} row (optional) - object of key/value column name/values.
+     * @returns {PhanxInsert}
+     */
+    insert(table, values = null) {
+        return new PhanxInsert_1.PhanxInsert(this, table, values);
+    }
+    /**
+     * Update helper method.
+     * Example:
+     * Updates record id=15 changing name to "test":
+     * <pre>
+     *     ...
+     *     let update:PhanxUpdate = db.update("test","id=?",[15],{name:"test"});
+     *     await update.run();
+     *     ...
+     *     //another way to do the same:
+     *     let update:PhanxUpdate = db.update("test",{id:15},null,{name:"test"});
+     *     await update.run();
+     *     ...
+     * </pre>
+     * @param {string} table - table name
+     * @param {any|string} where - the where clause:
+     *                          as string for sql, or
+     *                          column/value pair object for strict equals
+     * @param {Array<any>} whereParams (optional) used with where as string
+     *                              to replace the ? params you may use.
+     * @param {any} values (optional) - column/value pair object to set values
+     * @returns {PhanxUpdate}
+     */
+    update(table, where, whereParams = null, values = null) {
+        return new PhanxUpdate_1.PhanxUpdate(this, table, where, whereParams, values);
+    }
+    /**
+     * Calls insert and runs automatically.
+     * Usage:
+     * <pre>
+     *     ...
+     *     await db.insertAndRun("test",{name:"test"});
+     *     ...
+     * </pre>
+     *
+     * @param {string} table - table name
+     * @param {any} row - object of key/value column name/values.
+     * @returns {Promise<any>}
+     */
+    insertAndRun(table, values) {
+        return (this.insert(table, values)).run();
+    }
+    /**
+     * Calls update method and runs automatically.
+     * Usage:
+     * <pre>
+     *     ...
+     *     await db.updateAndRun("test",{id:1},null,{name:"test"});
+     *     ...
+     * </pre>
+     *
+     * @param {string} table - table name
+     * @param {any|string} where - the where clause:
+     *                          as string for sql, or
+     *                          column/value pair object for strict equals
+     * @param {Array<any>} whereParams (optional) used with where as string
+     *                              to replace the ? params you may use.
+     * @param {any} values (optional) - column/value pair object to set values
+     * @returns {Promise<any>}
+     */
+    updateAndRun(table, where, whereParams = null, values = null) {
+        return (this.update(table, where, whereParams, values)).run();
     }
     //#########################################################
     // Transaction Methods
