@@ -3,8 +3,7 @@ phanx-mysql
 MySQL database wrapper that provides async/await promises.
 
 * Typescript source code included
-* Select, Insert, Update and Delete Query Builders
-* Merge Command allowing insert or update in one command
+* Insert and Update Helper Methods
 * Promises included for async/await control-flow
 * Idle Connection Auto Closer
 * No transpiling required (JS code provided)
@@ -285,6 +284,22 @@ await db.updateAndRun("test", {id:1}, null, {name:"Tester"});
 //or
 await db.updateAndRun("test", "id=?", [1], {name:"Tester"});
 </pre>
+
+## change log
+
+<b>0.1.6</b>
+* Added a change log to readme
+
+<b>0.1.5</b>
+* Improved readme documentation to assist with queries with parameters.
+
+<b>0.1.4</b>
+* Query now accepts a single value outside of an array.
+* Added printQuery method to assist with debugging queries with parameters.
+
+<b>0.1.3</b>
+* Insert and Update methods to help write insert and update queries quickly.
+
 
 ## Module Dependencies
 
