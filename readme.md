@@ -285,7 +285,7 @@ await db.updateAndRun("test", {id:1}, null, {name:"Tester"});
 await db.updateAndRun("test", "id=?", [1], {name:"Tester"});
 </pre>
 
-## change log
+## Change Log
 
 <b>0.1.6</b>
 * Added a change log to readme
