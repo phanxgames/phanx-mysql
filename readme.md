@@ -132,6 +132,43 @@ while (db.hasRows()) {
 
 Note: You could use this method in a more asynchronous manner.
 
+## Parameters within a Query
+
+The query method's second parameter allows you to pass parameters to your SQL statement as an array of any data-type.
+
+
+```
+await db.query("select * from test where id=? ;", [55]);
+```
+In this example, the value of 55 will be placed where the question mark is, and will be stripped of all SQL injections.
+
+
+Even for strings you do not include quotes, such as:
+```
+await db.query("select * from test where username=? ;", ["Tester"]);
+```
+
+
+For LIKE searches you would include the wildcard characters in the array, such as:
+```
+await db.query("select * from test where username like ? ;", [username+"%"]);
+```
+This would look for all records with a username that start with the value that is within the username variable.
+
+
+You can pass multiple parameters to your query as well, since the parameters is an array, like so:
+```
+await db.query("select * from test where username=? and registered=? ;", [username,registered]);
+```
+It is important to note the order in which you place the question marks in your SQL, and the order in which you pass the variables within the array.
+
+
+#### Best practices with parameters
+
+You should not use question mark parameters for anything other than values that are passed to the database server. In other words,  you should not use a question mark in place of a table name or column name.  While it may function in the mysql module we are wrapping, it is not how parameterized queries work in most other database engines.
+
+
+
 ## Error Handling
 
 ### throwErrors
@@ -209,7 +246,8 @@ By default this is not enabled, however you may want to keep this enabled and wa
 
 Optional helper to assist in inserting simple queries into your database.
 
-3 Ways to do the same thing:
+<b>3 Ways to do the same thing:</b>
+Inserts a new row into the "test" table with name provided as "Tester" and the ID left null, so to auto-increment.
 
 <pre>
 await db.insert("test", {name:"Tester"}).finalize();
@@ -225,13 +263,12 @@ await insert.finalize();
 await db.insertAndRun("test", {name:"Tester"});
 </pre>
 
-Note: "id" column is omitted because this table has an auto-increment on this column.
-
 ## Update Helper
 
 Optional helper to assist in updating simple queries in your database.
 
-3 Ways to do the same thing:
+<b>3 Ways to do the same thing:</b>
+Updates the record with ID of 1, setting the name to "Tester" in the "test" table.
 
 <pre>
 await db.update("test", {id:1}, null, {name:"Tester"}).finalize();
