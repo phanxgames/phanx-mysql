@@ -386,11 +386,11 @@ export class PhanxMysql {
      * Query the database.
      *
      * @param {string} sql
-     * @param {Array<any>} paras - (optional)
+     * @param {number|string|Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,result:Array<any>,cbResume?:Function)
      * @returns {Promise<any>} - result:Array<any>
      */
-    public query(sql:string, paras:Array<any>=null,
+    public query(sql:string, paras:any|Array<any>=null,
                  cb:(err:any,result?:Array<any>,cbResume?:Function)=>void=null)
                 :Promise<any>
     {
@@ -416,6 +416,9 @@ export class PhanxMysql {
             }
 
             let timeStart:any = Util.timeStart();
+
+            if (!Array.isArray(paras))
+                paras = [paras];
 
             this._client.query(sql,paras, (err:Error, result:Object):void => {
 
@@ -480,7 +483,7 @@ export class PhanxMysql {
      * @param {Function} cb - (optional) cb(err:any,row:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
-    public selectRow(sql:string, paras:Array<any>=null,
+    public selectRow(sql:string, paras:any|Array<any>=null,
                      cb:(err:any,row:any,cbResume?:Function)=>void=null):Promise<any>
     {
         return new Promise((resolve, reject) => {
@@ -504,7 +507,7 @@ export class PhanxMysql {
      * @ignore
      * @alias query(...)
      */
-    public selectArray(sql:string, paras:Array<any>=null,
+    public selectArray(sql:string, paras:any|Array<any>=null,
                        cb:(err:any,row:Array<any>,cbResume?:Function)=>void=null)
     :Promise<any>
     {
@@ -782,6 +785,23 @@ export class PhanxMysql {
     // Utility Methods
     //#########################################################
 
+    /**
+     * Returns the string of the SQL statement with the parameters
+     *   in place of the question marks.
+     *
+     * @param {string} sql - SQL statement
+     * @param {any | Array<any>} paras - parameters
+     * @returns {string}
+     */
+    public printQuery(sql:string, paras:any|Array<any>):string {
+        let i=0;
+        if (!Array.isArray(paras))
+            paras = [paras];
+        while(sql.indexOf("?") >= 0) { sql = sql.replace("?",
+            "'"+paras[i++]+"'"); }
+        return sql;
+    }
+
 
     /**
      * Handles classic callback or promise and if to throw error or not.
@@ -845,7 +865,7 @@ export interface IMysqlConfig {
 interface IDbError {
     stack:string;
     sql:string;
-    paras:Array<any>;
+    paras:any|Array<any>;
     message:string;
 }
 

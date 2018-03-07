@@ -54,11 +54,11 @@ export declare class PhanxMysql {
      * Query the database.
      *
      * @param {string} sql
-     * @param {Array<any>} paras - (optional)
+     * @param {number|string|Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,result:Array<any>,cbResume?:Function)
      * @returns {Promise<any>} - result:Array<any>
      */
-    query(sql: string, paras?: Array<any>, cb?: (err: any, result?: Array<any>, cbResume?: Function) => void): Promise<any>;
+    query(sql: string, paras?: any | Array<any>, cb?: (err: any, result?: Array<any>, cbResume?: Function) => void): Promise<any>;
     /**
      * Select the first row from query.
      *
@@ -67,12 +67,12 @@ export declare class PhanxMysql {
      * @param {Function} cb - (optional) cb(err:any,row:any,cbResume?:Function)
      * @returns {Promise<any>}
      */
-    selectRow(sql: string, paras?: Array<any>, cb?: (err: any, row: any, cbResume?: Function) => void): Promise<any>;
+    selectRow(sql: string, paras?: any | Array<any>, cb?: (err: any, row: any, cbResume?: Function) => void): Promise<any>;
     /**
      * @ignore
      * @alias query(...)
      */
-    selectArray(sql: string, paras?: Array<any>, cb?: (err: any, row: Array<any>, cbResume?: Function) => void): Promise<any>;
+    selectArray(sql: string, paras?: any | Array<any>, cb?: (err: any, row: Array<any>, cbResume?: Function) => void): Promise<any>;
     /**
      * Insert Helper Method.
      * Example:
@@ -222,6 +222,15 @@ export declare class PhanxMysql {
      * @returns {Promise<any>}
      */
     asyncForEach(cbIterator: Function, cbComplete?: Function): Promise<null>;
+    /**
+     * Returns the string of the SQL statement with the parameters
+     *   in place of the question marks.
+     *
+     * @param {string} sql - SQL statement
+     * @param {any | Array<any>} paras - parameters
+     * @returns {string}
+     */
+    printQuery(sql: string, paras: any | Array<any>): string;
     /**
      * Handles classic callback or promise and if to throw error or not.
      *

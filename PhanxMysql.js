@@ -269,7 +269,7 @@ class PhanxMysql {
      * Query the database.
      *
      * @param {string} sql
-     * @param {Array<any>} paras - (optional)
+     * @param {number|string|Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,result:Array<any>,cbResume?:Function)
      * @returns {Promise<any>} - result:Array<any>
      */
@@ -287,6 +287,8 @@ class PhanxMysql {
                 return;
             }
             let timeStart = Util_1.Util.timeStart();
+            if (!Array.isArray(paras))
+                paras = [paras];
             this._client.query(sql, paras, (err, result) => {
                 let elapsed = Util_1.Util.timeEnd(timeStart);
                 if (err || result == null) {
@@ -578,6 +580,23 @@ class PhanxMysql {
     //#########################################################
     // Utility Methods
     //#########################################################
+    /**
+     * Returns the string of the SQL statement with the parameters
+     *   in place of the question marks.
+     *
+     * @param {string} sql - SQL statement
+     * @param {any | Array<any>} paras - parameters
+     * @returns {string}
+     */
+    printQuery(sql, paras) {
+        let i = 0;
+        if (!Array.isArray(paras))
+            paras = [paras];
+        while (sql.indexOf("?") >= 0) {
+            sql = sql.replace("?", "'" + paras[i++] + "'");
+        }
+        return sql;
+    }
     /**
      * Handles classic callback or promise and if to throw error or not.
      *
