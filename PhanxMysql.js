@@ -11,8 +11,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dictionaryjs_1 = require("dictionaryjs");
 const Mysql = require("mysql");
 const Util_1 = require("./Util");
-const PhanxInsert_1 = require("./PhanxInsert");
-const PhanxUpdate_1 = require("./PhanxUpdate");
 class PhanxMysql {
     constructor(config = null) {
         //references
@@ -372,7 +370,7 @@ class PhanxMysql {
      * @returns {PhanxInsert}
      */
     insert(table, values = null) {
-        return new PhanxInsert_1.PhanxInsert(this, table, values);
+        return new PhanxInsert(this, table, values);
     }
     /**
      * Update helper method.
@@ -398,7 +396,7 @@ class PhanxMysql {
      * @returns {PhanxUpdate}
      */
     update(table, where, whereParams = null, values = null) {
-        return new PhanxUpdate_1.PhanxUpdate(this, table, where, whereParams, values);
+        return new PhanxUpdate(this, table, where, whereParams, values);
     }
     /**
      * Calls insert and runs automatically.
@@ -642,4 +640,205 @@ PhanxMysql.openConnections = new dictionaryjs_1.Dictionary();
 PhanxMysql.auto_closer_minutes = 0;
 PhanxMysql.auto_closer_interval = null;
 exports.PhanxMysql = PhanxMysql;
+//##################################################################
+class PhanxInsert {
+    /**
+     * @param {PhanxMysql} db - db reference
+     * @param {string} table - table name
+     * @param {any} row (optional) - object of key/value column name/values.
+     */
+    constructor(db, table, row = null) {
+        this.valuesToSave = [];
+        this.db = db;
+        this.table = table;
+        if (row != null)
+            this.row(row);
+    }
+    /**
+     * Add a column/value to the current row.
+     * @param {string} column - column name
+     * @param value - value to insert
+     * @returns {PhanxInsert}
+     */
+    s(column, value) {
+        if (this.valuesToSave.length == 0)
+            this.createNewValueRow();
+        this.valuesToSave[column] = value;
+        return this;
+    }
+    /**
+     * Adds a new row to the insert.
+     * @param obj - key/value pairs
+     * @returns {PhanxInsert}
+     */
+    row(obj) {
+        this.valuesToSave.push(obj);
+        return this;
+    }
+    /**
+     * Creates a new row. To be used to the s(...) method.
+     * @returns {PhanxInsert}
+     */
+    newRow() {
+        this.createNewValueRow();
+        return this;
+    }
+    /**
+     * Finalizes the insert query and executes it.
+     * @returns {Promise<any>}
+     */
+    finalize() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.valuesToSave == null || this.valuesToSave.length == 0) {
+                throw new Error("No rows were provided to be inserted.");
+            }
+            let params = [];
+            let firstRow = this.valuesToSave[0];
+            let firstRowKeys = Object.keys(firstRow);
+            let sql = "insert into " + this.table + " ";
+            sql += "(" + firstRowKeys.join(",") + ") VALUES ";
+            let questionMarkTemplate = firstRowKeys.map(x => "?").join(",");
+            for (let row of this.valuesToSave) {
+                if (row == null)
+                    continue;
+                //place question marks
+                sql += "(" + questionMarkTemplate + "),";
+                for (let key in row) {
+                    let value = row[key];
+                    params.push(value);
+                }
+            }
+            //remove last comma if there is one
+            if (sql.substr(sql.length - 1) == ",")
+                sql = sql.substr(0, sql.length - 1);
+            yield this.db.query(sql, params);
+        });
+    }
+    /**
+     * @alias finalize
+     * @returns {Promise<any>}
+     */
+    execute() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.finalize();
+        });
+    }
+    /**
+     * @alias finalize
+     * @returns {Promise<any>}
+     */
+    run() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.finalize();
+        });
+    }
+    createNewValueRow() {
+        this.valuesToSave.push({});
+    }
+}
+exports.PhanxInsert = PhanxInsert;
+//##############################################################################
+class PhanxUpdate {
+    /**
+     * @param {PhanxMysql} db - db reference
+     * @param {string} table - table name
+     * @param {any|string} where - the where clause:
+     *                          as string for sql, or
+     *                          column/value pair object for strict equals
+     * @param {Array<any>} whereParams (optional) used with where as string
+     *                              to replace the ? params you may use.
+     * @param {any} values (optional) - column/value pair object to set values
+     */
+    constructor(db, table, where, whereParams = null, values = null) {
+        this.valuesToSave = {};
+        this.db = db;
+        this.table = table;
+        this.where = where;
+        this.whereParams = whereParams;
+        if (values != null)
+            this.row(values);
+    }
+    /**
+     * Add a column/value to the current row.
+     * @param {string} column - column name
+     * @param value - value to insert
+     * @returns {PhanxUpdate}
+     */
+    s(column, value) {
+        this.valuesToSave[column] = value;
+        return this;
+    }
+    /**
+     * Adds a new row to the insert.
+     * @param obj - key/value pairs
+     * @returns {PhanxInsert}
+     */
+    values(obj) {
+        this.valuesToSave = obj;
+        return this;
+    }
+    /**
+     * @alias values
+     */
+    row(obj) {
+        return this.values(obj);
+    }
+    /**
+     * Finalizes the insert query and executes it.
+     * @returns {Promise<any>}
+     */
+    finalize() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.valuesToSave == null) {
+                throw new Error("No values were provided to be updated.");
+            }
+            let params = [];
+            let sql = "update " + this.table + " set ";
+            for (let key in this.valuesToSave) {
+                sql += key + "=? ,";
+                params.push(this.valuesToSave[key]);
+            }
+            //remove last comma if there is one
+            if (sql.substr(sql.length - 1) == ",")
+                sql = sql.substr(0, sql.length - 1);
+            //where clause
+            if (this.where != null && this.where != "") {
+                if (typeof (this.where) == "string") {
+                    sql += " where " + this.where;
+                    if (this.whereParams != null)
+                        params = params.concat(this.whereParams);
+                }
+                else {
+                    sql += " where ";
+                    for (let key in this.where) {
+                        sql += key + "=?,";
+                        params.push(this.where[key]);
+                    }
+                    if (sql.substr(sql.length - 1) == ",")
+                        sql = sql.substr(0, sql.length - 1);
+                }
+            }
+            yield this.db.query(sql, params);
+        });
+    }
+    /**
+     * @alias finalize
+     * @returns {Promise<any>}
+     */
+    execute() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.finalize();
+        });
+    }
+    /**
+     * @alias finalize
+     * @returns {Promise<any>}
+     */
+    run() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.finalize();
+        });
+    }
+}
+exports.PhanxUpdate = PhanxUpdate;
 //# sourceMappingURL=PhanxMysql.js.map
