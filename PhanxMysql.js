@@ -811,11 +811,11 @@ class PhanxUpdate {
                 else {
                     sql += " where ";
                     for (let key in this.where) {
-                        sql += key + "=?,";
+                        sql += key + "=? AND ";
                         params.push(this.where[key]);
                     }
-                    if (sql.substr(sql.length - 1) == ",")
-                        sql = sql.substr(0, sql.length - 1);
+                    if (sql.substr(sql.length - 5) == " AND ")
+                        sql = sql.substr(0, sql.length - 5);
                 }
             }
             yield this.db.query(sql, params);
