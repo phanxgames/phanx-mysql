@@ -253,7 +253,7 @@ await db.insert("test", {name:"Tester"}).finalize();
 </pre>
 
 <pre>
-let insert:PhanxInsert = await db.insert("test");
+let insert:PhanxInsert = db.insert("test");
 insert.row({name:"Tester"});
 await insert.finalize();
 </pre>
@@ -274,7 +274,7 @@ await db.update("test", {id:1}, null, {name:"Tester"}).finalize();
 </pre>
 
 <pre>
-let update:PhanxUpdate = await db.update("test", "id=?", [1]);
+let update:PhanxUpdate = db.update("test", "id=?", [1]);
 update.row({name:"Tester"});
 await update.finalize();
 </pre>
