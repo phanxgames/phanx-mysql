@@ -143,6 +143,12 @@ export class PhanxMysql {
 
     }
 
+    /**
+     * Formats values to be used safely within queries.
+     * @param {string} value
+     * @param {string} timezone (optional)
+     * @returns {string}
+     */
     public static escape(value:string, timezone:string=null):string {
         return SqlString.escape(value, false, timezone);
     }
@@ -806,6 +812,16 @@ export class PhanxMysql {
      */
     public printQuery(sql:string, paras:any|Array<any>):string {
         return this._namedParamQueryFormatter(sql, paras);
+    }
+
+    /**
+     * Formats values to be used safely within queries.
+     * @param {string} value
+     * @param {string} timezone (optional)
+     * @returns {string}
+     */
+    public escape(value:string, timezone:string=null):string {
+        return SqlString.escape(value, false, timezone);
     }
 
 

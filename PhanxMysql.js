@@ -118,6 +118,12 @@ class PhanxMysql {
             }, 10000);
         }
     }
+    /**
+     * Formats values to be used safely within queries.
+     * @param {string} value
+     * @param {string} timezone (optional)
+     * @returns {string}
+     */
     static escape(value, timezone = null) {
         return SqlString.escape(value, false, timezone);
     }
@@ -599,6 +605,15 @@ class PhanxMysql {
      */
     printQuery(sql, paras) {
         return this._namedParamQueryFormatter(sql, paras);
+    }
+    /**
+     * Formats values to be used safely within queries.
+     * @param {string} value
+     * @param {string} timezone (optional)
+     * @returns {string}
+     */
+    escape(value, timezone = null) {
+        return SqlString.escape(value, false, timezone);
     }
     /**
      * Handles classic callback or promise and if to throw error or not.

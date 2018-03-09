@@ -23,6 +23,12 @@ export declare class PhanxMysql {
     static closeAll(cb?: Function): Promise<any>;
     static closePool(cb?: Function): Promise<any>;
     static setAutoCloseMinutes(minutes: number): void;
+    /**
+     * Formats values to be used safely within queries.
+     * @param {string} value
+     * @param {string} timezone (optional)
+     * @returns {string}
+     */
     static escape(value: string, timezone?: string): string;
     throwErrors: boolean;
     config: IDbConfig;
@@ -230,6 +236,13 @@ export declare class PhanxMysql {
      * @returns {string}
      */
     printQuery(sql: string, paras: any | Array<any>): string;
+    /**
+     * Formats values to be used safely within queries.
+     * @param {string} value
+     * @param {string} timezone (optional)
+     * @returns {string}
+     */
+    escape(value: string, timezone?: string): string;
     /**
      * Handles classic callback or promise and if to throw error or not.
      *
