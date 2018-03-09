@@ -311,11 +311,17 @@ await db.updateAndRun("test", "id=?", [1], {name:"Tester"});
 
 ## Change Log
 
+<b>0.3.2</b>
+* Debug trace messages are now configurable, set config.json: "showDebugTraces".
+
+<b>0.3.1</b>
+* Added escape method to assist in escaping strings to be used within queries.
+
 <b>0.3.0</b>
 * Query's now support named params in addition to question marks. See Named Params section above.
 * Insert helper's run() method now returns the newly inserted row ID.
 * Update helper's run() method now returns the number of records affected.
-* Added escape method to assist in escaping strings to be used within queries.
+
 
 
 <b>0.2.0</b>

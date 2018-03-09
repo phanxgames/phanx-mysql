@@ -70,7 +70,8 @@ class PhanxMysql {
             let pool = PhanxMysql.pool;
             if (pool != null) {
                 pool.end((err) => {
-                    console.log("pool closed");
+                    if (PhanxMysql.dbConfig.showDebugTraces)
+                        console.log("pool closed");
                     console.error(err);
                     if (cb != null)
                         cb(err);
@@ -107,13 +108,15 @@ class PhanxMysql {
                     }
                 }
                 if (outlog != "") {
-                    console.error("----------------------------------------\n" +
-                        "**** " + counter +
-                        " Database Connection Auto-Closed ****" + outlog +
-                        "\n----------------------------------------");
+                    if (PhanxMysql.dbConfig.showDebugTraces)
+                        console.error("----------------------------------------\n" +
+                            "**** " + counter +
+                            " Database Connection Auto-Closed ****" + outlog +
+                            "\n----------------------------------------");
                 }
                 else if (counter > 0) {
-                    console.log("Database connections still opened (" + counter + ").");
+                    if (PhanxMysql.dbConfig.showDebugTraces)
+                        console.log("Database connections still opened (" + counter + ").");
                 }
             }, 10000);
         }
@@ -235,7 +238,8 @@ class PhanxMysql {
             }
             if (this._openedTimestamp > 0) {
                 let elapsed = Util_1.Util.getTimeDiff(this._openedTimestamp, "ms");
-                console.log("Connection released after in use for " + elapsed + " ms.");
+                if (this.config.showDebugTraces)
+                    console.log("Connection released after in use for " + elapsed + " ms.");
             }
             if (this._client == null) {
                 this.handleCallback(cb, resolve);
@@ -322,7 +326,8 @@ class PhanxMysql {
                     });
                     return;
                 }
-                console.log("Query completed in " + elapsed + " seconds.");
+                if (this.config.showDebugTraces)
+                    console.log("Query completed in " + elapsed + " seconds.");
                 //result = result as Object;
                 if (Array.isArray(result))
                     this._result = result;

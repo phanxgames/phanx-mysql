@@ -372,6 +372,7 @@ export interface IDbConfig {
     mysql: IMysqlConfig;
     autoCloseMinutes: number;
     useNamedParamsQueryFormat: boolean;
+    showDebugTraces: boolean;
 }
 export interface IMysqlConfig {
     host: string;

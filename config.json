@@ -8,5 +8,6 @@
   },
   "usePool":true,
   "autoCloseMinutes":0,
-  "useNamedParamsQueryFormat":true
+  "useNamedParamsQueryFormat":true,
+  "showDebugTraces": false
 }
