@@ -19,13 +19,14 @@ export declare class PhanxMysql {
     private _throwErrors;
     constructor(config?: IDbConfig);
     static config: IDbConfig;
-    static createAndStart(): Promise<PhanxMysql>;
+    static createAndStart(options?: IDbConfig): Promise<PhanxMysql>;
     static closeAll(cb?: Function): Promise<any>;
     static closePool(cb?: Function): Promise<any>;
     static setAutoCloseMinutes(minutes: number): void;
+    static escape(value: string, timezone?: string): string;
     throwErrors: boolean;
     config: IDbConfig;
-    usePool(): boolean;
+    usesPool(): boolean;
     /**
      * Opens database connection.
      *
@@ -122,9 +123,9 @@ export declare class PhanxMysql {
      *
      * @param {string} table - table name
      * @param {any} row - object of key/value column name/values.
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - newly inserted id
      */
-    insertAndRun(table: string, values: any): Promise<any>;
+    insertAndRun(table: string, values: any): Promise<number>;
     /**
      * Calls update method and runs automatically.
      * Usage:
@@ -141,9 +142,9 @@ export declare class PhanxMysql {
      * @param {Array<any>} whereParams (optional) used with where as string
      *                              to replace the ? params you may use.
      * @param {any} values (optional) - column/value pair object to set values
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - number of rows affected
      */
-    updateAndRun(table: string, where: any, whereParams?: Array<any>, values?: any): Promise<any>;
+    updateAndRun(table: string, where: any, whereParams?: Array<any>, values?: any): Promise<number>;
     /**
      * Transaction Begin Helper method.
      *
@@ -247,6 +248,16 @@ export declare class PhanxMysql {
      * @ignore
      */
     private generateGuid();
+    /**
+     * Extends the default query format behavior of replacing "?" in the query to
+     *   also allow named params, such as ":name" and an object passed as a param.
+     *
+     * @param {string} query
+     * @param values
+     * @returns {string}
+     * @private
+     */
+    private _namedParamQueryFormatter(query, values);
 }
 export declare class PhanxInsert {
     db: PhanxMysql;
@@ -278,9 +289,9 @@ export declare class PhanxInsert {
     newRow(): PhanxInsert;
     /**
      * Finalizes the insert query and executes it.
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - returns newly inserted ID
      */
-    finalize(): Promise<any>;
+    finalize(): Promise<number>;
     /**
      * @alias finalize
      * @returns {Promise<any>}
@@ -329,9 +340,9 @@ export declare class PhanxUpdate {
     row(obj: any): PhanxUpdate;
     /**
      * Finalizes the insert query and executes it.
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - number of affected rows
      */
-    finalize(): Promise<any>;
+    finalize(): Promise<number>;
     /**
      * @alias finalize
      * @returns {Promise<any>}
@@ -347,6 +358,7 @@ export interface IDbConfig {
     usePool: boolean;
     mysql: IMysqlConfig;
     autoCloseMinutes: number;
+    useNamedParamsQueryFormat: boolean;
 }
 export interface IMysqlConfig {
     host: string;
@@ -354,4 +366,8 @@ export interface IMysqlConfig {
     user: string;
     password: string;
     connectionLimit: number;
+    multipleStatements?: boolean;
+    queryFormat: (query: string, values: any) => string;
+    connectionTimeout?: number;
+    timezone?: string;
 }

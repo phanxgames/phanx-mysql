@@ -99,5 +99,36 @@ export class Util {
         return (process.hrtime(start)[1] / 1000000000).toFixed(5);
     }
 
+    public static isPlainObject(o:any):boolean {
+        let ctor,prot;
+
+        if (Util._isObjectObject(o) === false) return false;
+
+        // If has modified constructor
+        ctor = o.constructor;
+        if (typeof ctor !== 'function') return false;
+
+        // If has modified prototype
+        prot = ctor.prototype;
+        if (Util._isObjectObject(prot) === false) return false;
+
+        // If constructor does not have an Object-specific method
+        if (prot.hasOwnProperty('isPrototypeOf') === false) {
+            return false;
+        }
+
+        // Most likely a plain Object
+        return true;
+    }
+
+    private static _isObjectObject(o) {
+        return Util.isObject(o) === true
+            && Object.prototype.toString.call(o) === '[object Object]';
+    }
+
+    public static isObject(val:any):boolean {
+        return val != null && typeof val === 'object' && Array.isArray(val) === false;
+    }
+
 
 }

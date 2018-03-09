@@ -11,6 +11,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dictionaryjs_1 = require("dictionaryjs");
 const Mysql = require("mysql");
 const Util_1 = require("./Util");
+const SqlString = require("sqlstring");
 class PhanxMysql {
     constructor(config = null) {
         //references
@@ -47,9 +48,9 @@ class PhanxMysql {
         PhanxMysql.dbConfig = config;
         PhanxMysql.setAutoCloseMinutes(config.autoCloseMinutes);
     }
-    static createAndStart() {
+    static createAndStart(options = null) {
         return __awaiter(this, void 0, void 0, function* () {
-            let db = new PhanxMysql();
+            let db = new PhanxMysql(options);
             yield db.start();
             return db;
         });
@@ -117,6 +118,9 @@ class PhanxMysql {
             }, 10000);
         }
     }
+    static escape(value, timezone = null) {
+        return SqlString.escape(value, false, timezone);
+    }
     //#########################################################
     // Config Methods
     //#########################################################
@@ -130,12 +134,19 @@ class PhanxMysql {
         this._config = config;
     }
     get config() {
+        let config;
         if (this._config == null) {
-            return PhanxMysql.dbConfig;
+            config = PhanxMysql.dbConfig;
         }
-        return this._config;
+        else {
+            config = this._config;
+        }
+        if (config.useNamedParamsQueryFormat) {
+            config.mysql.queryFormat = this._namedParamQueryFormatter;
+        }
+        return config;
     }
-    usePool() {
+    usesPool() {
         return (this.config.usePool == true);
     }
     //#########################################################
@@ -151,7 +162,7 @@ class PhanxMysql {
         this._startStack = this._errorStack = new Error().stack;
         return new Promise((resolve, reject) => {
             try {
-                if (this.usePool()) {
+                if (this.usesPool()) {
                     if (PhanxMysql.pool == null)
                         PhanxMysql.pool = Mysql.createPool(this.config.mysql);
                     PhanxMysql.pool.getConnection((err, conn) => {
@@ -224,7 +235,7 @@ class PhanxMysql {
                 this.handleCallback(cb, resolve);
                 return;
             }
-            if (this.usePool()) {
+            if (this.usesPool()) {
                 this._client.release();
                 PhanxMysql.openConnections.remove(this._guid);
                 this._client = null;
@@ -285,7 +296,7 @@ class PhanxMysql {
                 return;
             }
             let timeStart = Util_1.Util.timeStart();
-            if (!Array.isArray(paras))
+            if (!Array.isArray(paras) && !Util_1.Util.isObject(paras))
                 paras = [paras];
             this._client.query(sql, paras, (err, result) => {
                 let elapsed = Util_1.Util.timeEnd(timeStart);
@@ -409,7 +420,7 @@ class PhanxMysql {
      *
      * @param {string} table - table name
      * @param {any} row - object of key/value column name/values.
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - newly inserted id
      */
     insertAndRun(table, values) {
         return (this.insert(table, values)).run();
@@ -430,7 +441,7 @@ class PhanxMysql {
      * @param {Array<any>} whereParams (optional) used with where as string
      *                              to replace the ? params you may use.
      * @param {any} values (optional) - column/value pair object to set values
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - number of rows affected
      */
     updateAndRun(table, where, whereParams = null, values = null) {
         return (this.update(table, where, whereParams, values)).run();
@@ -587,13 +598,7 @@ class PhanxMysql {
      * @returns {string}
      */
     printQuery(sql, paras) {
-        let i = 0;
-        if (!Array.isArray(paras))
-            paras = [paras];
-        while (sql.indexOf("?") >= 0) {
-            sql = sql.replace("?", "'" + paras[i++] + "'");
-        }
-        return sql;
+        return this._namedParamQueryFormatter(sql, paras);
     }
     /**
      * Handles classic callback or promise and if to throw error or not.
@@ -630,6 +635,31 @@ class PhanxMysql {
      */
     generateGuid() {
         this._guid = Util_1.Util.generateToken(6, PhanxMysql.dictTokens);
+    }
+    /**
+     * Extends the default query format behavior of replacing "?" in the query to
+     *   also allow named params, such as ":name" and an object passed as a param.
+     *
+     * @param {string} query
+     * @param values
+     * @returns {string}
+     * @private
+     */
+    _namedParamQueryFormatter(query, values) {
+        let timezone = null;
+        if (this.config != null && this.config.mysql != null)
+            timezone = this.config.mysql.timezone;
+        if (Util_1.Util.isObject(values)) {
+            return query.replace(/\:(\w+)/g, (txt, key) => {
+                if (values.hasOwnProperty(key)) {
+                    return PhanxMysql.escape(values[key], timezone);
+                }
+                return txt;
+            });
+        }
+        else {
+            return SqlString.format(query, values, false, timezone);
+        }
     }
 }
 //static
@@ -685,7 +715,7 @@ class PhanxInsert {
     }
     /**
      * Finalizes the insert query and executes it.
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - returns newly inserted ID
      */
     finalize() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -711,7 +741,8 @@ class PhanxInsert {
             //remove last comma if there is one
             if (sql.substr(sql.length - 1) == ",")
                 sql = sql.substr(0, sql.length - 1);
-            yield this.db.query(sql, params);
+            let result = yield this.db.query(sql, params);
+            return result.insertId;
         });
     }
     /**
@@ -785,7 +816,7 @@ class PhanxUpdate {
     }
     /**
      * Finalizes the insert query and executes it.
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - number of affected rows
      */
     finalize() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -818,7 +849,8 @@ class PhanxUpdate {
                         sql = sql.substr(0, sql.length - 5);
                 }
             }
-            yield this.db.query(sql, params);
+            let result = yield this.db.query(sql, params);
+            return result.changedRows;
         });
     }
     /**

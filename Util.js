@@ -88,6 +88,32 @@ class Util {
     static timeEnd(start) {
         return (process.hrtime(start)[1] / 1000000000).toFixed(5);
     }
+    static isPlainObject(o) {
+        let ctor, prot;
+        if (Util._isObjectObject(o) === false)
+            return false;
+        // If has modified constructor
+        ctor = o.constructor;
+        if (typeof ctor !== 'function')
+            return false;
+        // If has modified prototype
+        prot = ctor.prototype;
+        if (Util._isObjectObject(prot) === false)
+            return false;
+        // If constructor does not have an Object-specific method
+        if (prot.hasOwnProperty('isPrototypeOf') === false) {
+            return false;
+        }
+        // Most likely a plain Object
+        return true;
+    }
+    static _isObjectObject(o) {
+        return Util.isObject(o) === true
+            && Object.prototype.toString.call(o) === '[object Object]';
+    }
+    static isObject(val) {
+        return val != null && typeof val === 'object' && Array.isArray(val) === false;
+    }
 }
 exports.Util = Util;
 //# sourceMappingURL=Util.js.map

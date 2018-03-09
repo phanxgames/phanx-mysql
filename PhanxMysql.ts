@@ -2,6 +2,7 @@
 import {Dictionary} from "dictionaryjs";
 import * as Mysql from "mysql";
 import {Util} from "./Util";
+const SqlString = require("sqlstring");
 
 export class PhanxMysql {
 
@@ -47,8 +48,8 @@ export class PhanxMysql {
         PhanxMysql.setAutoCloseMinutes(config.autoCloseMinutes);
     }
 
-    public static async createAndStart():Promise<PhanxMysql> {
-        let db:PhanxMysql = new PhanxMysql();
+    public static async createAndStart(options:IDbConfig=null):Promise<PhanxMysql> {
+        let db:PhanxMysql = new PhanxMysql(options);
         await db.start();
         return db;
     }
@@ -142,6 +143,10 @@ export class PhanxMysql {
 
     }
 
+    public static escape(value:string, timezone:string=null):string {
+        return SqlString.escape(value, false, timezone);
+    }
+
     //#########################################################
     // Config Methods
     //#########################################################
@@ -160,14 +165,22 @@ export class PhanxMysql {
     }
 
     public get config():IDbConfig {
+        let config:IDbConfig;
+
         if (this._config == null) {
-            return PhanxMysql.dbConfig;
+            config = PhanxMysql.dbConfig;
+        } else {
+            config = this._config;
         }
-        return this._config;
+
+        if (config.useNamedParamsQueryFormat) {
+            config.mysql.queryFormat = this._namedParamQueryFormatter;
+        }
+
+        return config;
     }
 
-
-    public usePool():boolean {
+    public usesPool():boolean {
         return (this.config.usePool==true);
     }
 
@@ -189,7 +202,7 @@ export class PhanxMysql {
 
             try {
 
-                if (this.usePool()) {
+                if (this.usesPool()) {
 
                     if (PhanxMysql.pool == null)
                         PhanxMysql.pool = Mysql.createPool(this.config.mysql);
@@ -318,7 +331,7 @@ export class PhanxMysql {
                 return;
             }
 
-            if (this.usePool()) {
+            if (this.usesPool()) {
 
                 this._client.release();
 
@@ -415,7 +428,7 @@ export class PhanxMysql {
 
             let timeStart:any = Util.timeStart();
 
-            if (!Array.isArray(paras))
+            if (!Array.isArray(paras) && !Util.isObject(paras))
                 paras = [paras];
 
             this._client.query(sql,paras, (err:Error, result:Object):void => {
@@ -575,9 +588,9 @@ export class PhanxMysql {
      *
      * @param {string} table - table name
      * @param {any} row - object of key/value column name/values.
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - newly inserted id
      */
-    public insertAndRun(table:string, values:any):Promise<any> {
+    public insertAndRun(table:string, values:any):Promise<number> {
         return (this.insert(table,values)).run();
     }
 
@@ -597,10 +610,10 @@ export class PhanxMysql {
      * @param {Array<any>} whereParams (optional) used with where as string
      *                              to replace the ? params you may use.
      * @param {any} values (optional) - column/value pair object to set values
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - number of rows affected
      */
     public updateAndRun(table:string, where:any,
-                        whereParams:Array<any>=null, values:any=null):Promise<any>
+                        whereParams:Array<any>=null, values:any=null):Promise<number>
     {
         return (this.update(table, where, whereParams, values)).run();
     }
@@ -792,12 +805,7 @@ export class PhanxMysql {
      * @returns {string}
      */
     public printQuery(sql:string, paras:any|Array<any>):string {
-        let i=0;
-        if (!Array.isArray(paras))
-            paras = [paras];
-        while(sql.indexOf("?") >= 0) { sql = sql.replace("?",
-            "'"+paras[i++]+"'"); }
-        return sql;
+        return this._namedParamQueryFormatter(sql, paras);
     }
 
 
@@ -841,6 +849,36 @@ export class PhanxMysql {
      */
     private generateGuid():void {
         this._guid = Util.generateToken(6, PhanxMysql.dictTokens);
+    }
+
+    /**
+     * Extends the default query format behavior of replacing "?" in the query to
+     *   also allow named params, such as ":name" and an object passed as a param.
+     *
+     * @param {string} query
+     * @param values
+     * @returns {string}
+     * @private
+     */
+    private _namedParamQueryFormatter(query: string, values: any):string {
+
+        let timezone:string = null;
+        if (this.config!=null && this.config.mysql!=null)
+            timezone = this.config.mysql.timezone;
+
+        if (Util.isObject(values)) {
+            return query.replace(/\:(\w+)/g,  (txt, key) => {
+                if (values.hasOwnProperty(key)) {
+                    return PhanxMysql.escape(values[key], timezone);
+                }
+                return txt;
+            });
+
+        } else {
+            return SqlString.format(query, values, false, timezone);
+        }
+
+
     }
 
 
@@ -902,9 +940,9 @@ export class PhanxInsert {
 
     /**
      * Finalizes the insert query and executes it.
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - returns newly inserted ID
      */
-    public async finalize():Promise<any> {
+    public async finalize():Promise<number> {
 
         if (this.valuesToSave == null || this.valuesToSave.length == 0) {
             throw new Error("No rows were provided to be inserted.");
@@ -939,7 +977,9 @@ export class PhanxInsert {
         if (sql.substr(sql.length-1) == ",")
             sql = sql.substr(0,sql.length-1);
 
-        await this.db.query(sql,params);
+        let result:any = await this.db.query(sql,params);
+
+        return result.insertId;
 
 
     }
@@ -1034,9 +1074,9 @@ export class PhanxUpdate {
 
     /**
      * Finalizes the insert query and executes it.
-     * @returns {Promise<any>}
+     * @returns {Promise<number>} - number of affected rows
      */
-    public async finalize():Promise<any> {
+    public async finalize():Promise<number> {
 
         if (this.valuesToSave == null) {
             throw new Error("No values were provided to be updated.");
@@ -1079,7 +1119,9 @@ export class PhanxUpdate {
 
 
 
-        await this.db.query(sql,params);
+        let result:any = await this.db.query(sql,params);
+
+        return result.changedRows;
 
 
     }
@@ -1108,7 +1150,8 @@ export class PhanxUpdate {
 export interface IDbConfig {
     usePool:boolean,
     mysql:IMysqlConfig,
-    autoCloseMinutes:number
+    autoCloseMinutes:number,
+    useNamedParamsQueryFormat:boolean
 }
 export interface IMysqlConfig {
     host:string;
@@ -1116,6 +1159,10 @@ export interface IMysqlConfig {
     user:string;
     password:string;
     connectionLimit:number;
+    multipleStatements?:boolean;
+    queryFormat:(query: string, values: any)=> string;
+    connectionTimeout?:number;
+    timezone?: string;
 }
 interface IDbError {
     stack:string;

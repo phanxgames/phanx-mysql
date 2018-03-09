@@ -9,4 +9,7 @@ export declare class Util {
     static getTimeDiff(ts: number, unit: string): number;
     static timeStart(): [number, number];
     static timeEnd(start: [number, number]): string;
+    static isPlainObject(o: any): boolean;
+    private static _isObjectObject(o);
+    static isObject(val: any): boolean;
 }

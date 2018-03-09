@@ -7,5 +7,6 @@
     "connectionLimit": 10
   },
   "usePool":true,
-  "autoCloseMinutes":0
+  "autoCloseMinutes":0,
+  "useNamedParamsQueryFormat":true
 }

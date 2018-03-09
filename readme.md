@@ -4,6 +4,7 @@ MySQL database wrapper that provides async/await promises.
 
 * Typescript source code included
 * Insert and Update Helper Methods
+* Named Params Query Formatter included
 * Promises included for async/await control-flow
 * Idle Connection Auto Closer
 * No transpiling required (JS code provided)
@@ -166,6 +167,29 @@ It is important to note the order in which you place the question marks in your 
 
 You should not use question mark parameters for anything other than values that are passed to the database server. In other words,  you should not use a question mark in place of a table name or column name.  While it may function in the mysql module we are wrapping, it is not how parameterized queries work in most other database engines.
 
+## Named Params within a Query
+
+You may now use named params within your queries instead of question marks.
+
+You will first need to enable in your config.json a new property. The example config already has this set to true.
+
+<pre>
+"useNamedParamsQueryFormat":true
+</pre>
+
+Then instead of passing an Array into the query params (the second parameter), you should now pass an object of key/value pairs.  Doing so will trigger a new query formatter.
+
+<b>Example:</b>
+
+<pre>
+let results:Array<any> = await db.query(
+    "select * from users where username=:username and email like :email ;",
+    {username: "Tester", email: "%@gmail.com"});
+</pre>
+
+In this example the named params ":username" and ":email" will be replaced using the keys in the passed in object.  No more question mark params needed! Fancy!
+
+You can, however, always fall back to using question mark params if you pass in an array or a string in as the second parameter in the query method.
 
 
 ## Error Handling
@@ -287,19 +311,18 @@ await db.updateAndRun("test", "id=?", [1], {name:"Tester"});
 
 ## Change Log
 
-<b>0.1.6</b>
-* Added a change log to readme
+<b>0.3.0</b>
+* Query's now support named params in addition to question marks. See Named Params section above.
+* Insert helper's run() method now returns the newly inserted row ID.
+* Update helper's run() method now returns the number of records affected.
+* Added escape method to assist in escaping strings to be used within queries.
 
-<b>0.1.5</b>
-* Improved readme documentation to assist with queries with parameters.
 
-<b>0.1.4</b>
+<b>0.2.0</b>
+* Insert and Update methods to help write insert and update queries quickly.
 * Query now accepts a single value outside of an array.
 * Added printQuery method to assist with debugging queries with parameters.
-
-<b>0.1.3</b>
-* Insert and Update methods to help write insert and update queries quickly.
-
+* Improved readme documentation to assist with queries with parameters.
 
 ## Module Dependencies
 
