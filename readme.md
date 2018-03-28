@@ -173,19 +173,19 @@ You may now use named params within your queries instead of question marks.
 
 You will first need to enable in your config.json a new property. The example config already has this set to true.
 
-<pre>
+```
 "useNamedParamsQueryFormat":true
-</pre>
+```
 
 Then instead of passing an Array into the query params (the second parameter), you should now pass an object of key/value pairs.  Doing so will trigger a new query formatter.
 
 <b>Example:</b>
 
-<pre>
+```
 let results:Array<any> = await db.query(
     "select * from users where username=:username and email like :email ;",
     {username: "Tester", email: "%@gmail.com"});
-</pre>
+```
 
 In this example the named params ":username" and ":email" will be replaced using the keys in the passed in object.  No more question mark params needed! Fancy!
 
@@ -272,19 +272,19 @@ Optional helper to assist in inserting simple queries into your database.
 <b>3 Ways to do the same thing:</b>
 Inserts a new row into the "test" table with name provided as "Tester" and the ID left null, so to auto-increment.
 
-<pre>
+```
 await db.insert("test", {name:"Tester"}).finalize();
-</pre>
+```
 
-<pre>
+```
 let insert:PhanxInsert = db.insert("test");
 insert.row({name:"Tester"});
 await insert.finalize();
-</pre>
+```
 
-<pre>
+```
 await db.insertAndRun("test", {name:"Tester"});
-</pre>
+```
 
 ## Update Helper
 
@@ -293,23 +293,26 @@ Optional helper to assist in updating simple queries in your database.
 <b>3 Ways to do the same thing:</b>
 Updates the record with ID of 1, setting the name to "Tester" in the "test" table.
 
-<pre>
+```
 await db.update("test", {id:1}, null, {name:"Tester"}).finalize();
-</pre>
+```
 
-<pre>
+```
 let update:PhanxUpdate = db.update("test", "id=?", [1]);
 update.row({name:"Tester"});
 await update.finalize();
-</pre>
+```
 
-<pre>
+```
 await db.updateAndRun("test", {id:1}, null, {name:"Tester"});
 //or
 await db.updateAndRun("test", "id=?", [1], {name:"Tester"});
-</pre>
+```
 
 ## Change Log
+
+<b>0.3.3</b>
+* Fixed bug with insert and update returned results (newly inserted id and rows affected).
 
 <b>0.3.2</b>
 * Debug trace messages are now configurable, set config.json: "showDebugTraces".

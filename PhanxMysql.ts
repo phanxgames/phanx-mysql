@@ -1001,6 +1001,9 @@ export class PhanxInsert {
 
         let result:any = await this.db.query(sql,params);
 
+        if (Array.isArray(result) && result.length > 0)
+            result = result[0];
+
         return result.insertId;
 
 
@@ -1142,6 +1145,9 @@ export class PhanxUpdate {
 
 
         let result:any = await this.db.query(sql,params);
+
+        if (Array.isArray(result) && result.length > 0)
+            result = result[0];
 
         return result.changedRows;
 

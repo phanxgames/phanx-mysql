@@ -762,6 +762,8 @@ class PhanxInsert {
             if (sql.substr(sql.length - 1) == ",")
                 sql = sql.substr(0, sql.length - 1);
             let result = yield this.db.query(sql, params);
+            if (Array.isArray(result) && result.length > 0)
+                result = result[0];
             return result.insertId;
         });
     }
@@ -870,6 +872,8 @@ class PhanxUpdate {
                 }
             }
             let result = yield this.db.query(sql, params);
+            if (Array.isArray(result) && result.length > 0)
+                result = result[0];
             return result.changedRows;
         });
     }
