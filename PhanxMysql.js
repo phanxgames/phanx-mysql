@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -356,7 +357,7 @@ class PhanxMysql {
             this.query(sql, paras, (err, result) => {
                 if (err || result == null || result.length < 1) {
                     this.handleCallback(cb, resolve, reject, err, result, () => {
-                        resolve(result);
+                        resolve(null);
                     });
                     return;
                 }
@@ -682,6 +683,7 @@ class PhanxMysql {
         }
     }
 }
+exports.PhanxMysql = PhanxMysql;
 //static
 PhanxMysql.pool = null;
 PhanxMysql.dbConfig = null;
@@ -689,7 +691,6 @@ PhanxMysql.dictTokens = new dictionaryjs_1.Dictionary();
 PhanxMysql.openConnections = new dictionaryjs_1.Dictionary();
 PhanxMysql.auto_closer_minutes = 0;
 PhanxMysql.auto_closer_interval = null;
-exports.PhanxMysql = PhanxMysql;
 //##################################################################
 class PhanxInsert {
     /**

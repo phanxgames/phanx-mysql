@@ -18,7 +18,7 @@ export declare class PhanxMysql {
     private _guid;
     private _throwErrors;
     constructor(config?: IDbConfig);
-    static config: IDbConfig;
+    static set config(config: IDbConfig);
     static createAndStart(options?: IDbConfig): Promise<PhanxMysql>;
     static closeAll(cb?: Function): Promise<any>;
     static closePool(cb?: Function): Promise<any>;
@@ -30,8 +30,10 @@ export declare class PhanxMysql {
      * @returns {string}
      */
     static escape(value: string, timezone?: string): string;
-    throwErrors: boolean;
-    config: IDbConfig;
+    get throwErrors(): boolean;
+    set throwErrors(value: boolean);
+    set config(config: IDbConfig);
+    get config(): IDbConfig;
     usesPool(): boolean;
     /**
      * Opens database connection.
@@ -176,49 +178,49 @@ export declare class PhanxMysql {
      * Global Unique Identifier for this connection.
      * @returns {String}
      */
-    readonly guid: string;
+    get guid(): string;
     /**
      * The stack trace for the start of this connection.
      * Useful to narrow down where this connection was created if left open.
      * @returns {String}
      */
-    readonly startStack: string;
+    get startStack(): string;
     /**
      * Returns whether the connection is open or not.
      * @returns {Boolean}
      */
-    readonly opened: boolean;
+    get opened(): boolean;
     /**
      * Timestamp of when connection was opened. Linux epoch.
      * @returns {number}
      */
-    readonly openedTime: number;
+    get openedTime(): number;
     /**
      * Returns if there was an error from the last operation or null if there wasn't.
      * @returns {any}
      */
-    readonly error: any;
+    get error(): any;
     /**
      * Returns array of rows from last query.
      * @returns {Array<any>}
      */
-    readonly rows: Array<any>;
+    get rows(): Array<any>;
     /**
      * Returns the number of rows from last query.
      * @returns {number}
      */
-    readonly rowCount: number;
+    get rowCount(): number;
     /**
      * Returns the next row from the last query and moves the cursor to the next.
      * @returns {Object}
      */
-    readonly row: object;
+    get row(): object;
     hasRows(): boolean;
     /**
      * @ignore
      * @internal
      */
-    [Symbol.iterator]: () => IterableIterator<any>;
+    [Symbol.iterator]: () => Generator<any, void, unknown>;
     /**
      * Async (non-blocking) loop through last query's rows.
      *
@@ -253,14 +255,14 @@ export declare class PhanxMysql {
      * @param result - (optional) Result object
      * @param {Function} cbResume - (optional) cb() to resolve from callback
      */
-    private handleCallback(cb, resolve, reject?, err?, result?, cbResume?);
+    private handleCallback;
     /**
      * Generates a unique guid and stores it to this connection.
      *
      * @internal
      * @ignore
      */
-    private generateGuid();
+    private generateGuid;
     /**
      * Extends the default query format behavior of replacing "?" in the query to
      *   also allow named params, such as ":name" and an object passed as a param.
@@ -270,7 +272,7 @@ export declare class PhanxMysql {
      * @returns {string}
      * @private
      */
-    private _namedParamQueryFormatter(query, values);
+    private _namedParamQueryFormatter;
 }
 export declare class PhanxInsert {
     db: PhanxMysql;
@@ -315,7 +317,7 @@ export declare class PhanxInsert {
      * @returns {Promise<any>}
      */
     run(): Promise<any>;
-    private createNewValueRow();
+    private createNewValueRow;
 }
 export declare class PhanxUpdate {
     db: PhanxMysql;

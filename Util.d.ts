@@ -10,6 +10,6 @@ export declare class Util {
     static timeStart(): [number, number];
     static timeEnd(start: [number, number]): string;
     static isPlainObject(o: any): boolean;
-    private static _isObjectObject(o);
+    private static _isObjectObject;
     static isObject(val: any): boolean;
 }
