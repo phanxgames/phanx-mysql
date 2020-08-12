@@ -514,7 +514,7 @@ export class PhanxMysql {
             this.query(sql, paras, (err:any, result:any):void => {
                 if (err || result == null || result.length < 1) {
                     this.handleCallback(cb, resolve, reject, err, result, () => {
-                        resolve(result);
+                        resolve(null);
                     });
                     return;
                 }
