@@ -356,8 +356,9 @@ class PhanxMysql {
         return new Promise((resolve, reject) => {
             this.query(sql, paras, (err, result) => {
                 if (err || result == null || result.length < 1) {
+                    result = null;
                     this.handleCallback(cb, resolve, reject, err, result, () => {
-                        resolve(null);
+                        resolve(result);
                     });
                     return;
                 }
