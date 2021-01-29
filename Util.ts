@@ -1,4 +1,3 @@
-
 import {Dictionary} from "dictionaryjs";
 
 export class Util {
@@ -128,6 +127,11 @@ export class Util {
 
     public static isObject(val:any):boolean {
         return val != null && typeof val === 'object' && Array.isArray(val) === false;
+    }
+
+
+    public static isNumeric(n:any):boolean {
+        return !isNaN(parseFloat(n)) && isFinite(n);
     }
 
 

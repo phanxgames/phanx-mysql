@@ -92,7 +92,7 @@ export declare class PhanxMysql {
      * </pre>
      *
      * @param {string} table - table name
-     * @param {any} row (optional) - object of key/value column name/values.
+     * @param {any} values (optional) - object of key/value column name/values.
      * @returns {PhanxInsert}
      */
     insert(table: string, values?: any): PhanxInsert;
@@ -130,7 +130,7 @@ export declare class PhanxMysql {
      * </pre>
      *
      * @param {string} table - table name
-     * @param {any} row - object of key/value column name/values.
+     * @param {any} values - object of key/value column name/values.
      * @returns {Promise<number>} - newly inserted id
      */
     insertAndRun(table: string, values: any): Promise<number>;
@@ -370,11 +370,12 @@ export declare class PhanxUpdate {
     run(): Promise<any>;
 }
 export interface IDbConfig {
-    usePool: boolean;
+    usePool?: boolean;
+    poolTimeout?: 30;
     mysql: IMysqlConfig;
-    autoCloseMinutes: number;
-    useNamedParamsQueryFormat: boolean;
-    showDebugTraces: boolean;
+    autoCloseMinutes?: number;
+    useNamedParamsQueryFormat?: boolean;
+    showDebugTraces?: boolean;
 }
 export interface IMysqlConfig {
     host: string;
@@ -383,7 +384,7 @@ export interface IMysqlConfig {
     password: string;
     connectionLimit: number;
     multipleStatements?: boolean;
-    queryFormat: (query: string, values: any) => string;
+    queryFormat?: (query: string, values: any) => string;
     connectionTimeout?: number;
     timezone?: string;
 }

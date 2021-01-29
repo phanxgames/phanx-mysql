@@ -12,4 +12,5 @@ export declare class Util {
     static isPlainObject(o: any): boolean;
     private static _isObjectObject;
     static isObject(val: any): boolean;
+    static isNumeric(n: any): boolean;
 }

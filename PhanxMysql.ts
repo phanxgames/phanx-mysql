@@ -1,7 +1,7 @@
-
 import {Dictionary} from "dictionaryjs";
 import * as Mysql from "mysql";
 import {Util} from "./Util";
+
 const SqlString = require("sqlstring");
 
 export class PhanxMysql {
@@ -104,8 +104,12 @@ export class PhanxMysql {
         if (PhanxMysql.auto_closer_interval != null)
             clearInterval(PhanxMysql.auto_closer_interval);
 
+        if (minutes==null || !Util.isNumeric(minutes))
+            minutes = 0;
+
         PhanxMysql.auto_closer_minutes = minutes;
         let enabled:boolean = (minutes>0);
+
 
         if (enabled) {
             PhanxMysql.auto_closer_interval = setInterval(() => {
@@ -115,7 +119,7 @@ export class PhanxMysql {
 
                 for (let db of PhanxMysql.openConnections) {
                     counter++;
-                    if (db.opened) {
+                    if (db!=null && db.opened) {
                         let minutes:number = Util.getTimeDiff(db.openedTime,"min");
                         if (minutes > PhanxMysql.auto_closer_minutes) {
                             outlog += "\n[" + db.guid + "] Db Opened : " + minutes +
@@ -187,6 +191,10 @@ export class PhanxMysql {
             config.mysql.queryFormat = this._namedParamQueryFormatter;
         }
 
+        if (config.poolTimeout == null) {
+            config.poolTimeout = 30;
+        }
+
         return config;
     }
 
@@ -217,7 +225,36 @@ export class PhanxMysql {
                     if (PhanxMysql.pool == null)
                         PhanxMysql.pool = Mysql.createPool(this.config.mysql);
 
+                    let timeout = setTimeout(()=> {
+                        console.log("---------------------------------");
+                        console.error("Timeout getting connection from pool after " +
+                            this.config.poolTimeout + " seconds. " +
+                            PhanxMysql.openConnections.size() +
+                            " Connections left open. Please close connections after use," +
+                            " or enable \"autoCloseMinutes\".");
+                        if (PhanxMysql.openConnections.size() >= 1) {
+                            if (PhanxMysql.dbConfig.showDebugTraces) {
+
+                                for (let db of  PhanxMysql.openConnections)
+                                {
+                                    if (db==null) continue;
+
+                                    let minutes:number = Util.getTimeDiff(db.openedTime,"min");
+
+                                    console.log("\n[" + db.guid + "] Db Opened : " + minutes +
+                                        " minutes\n" + db.startStack + "\n");
+
+                                }
+                            } else {
+                                console.log("Enable \"showDebugTraces\" in config to see full stack trace on open connections.");
+                            }
+                        }
+
+                    }, this.config.poolTimeout*1000);
+
                     PhanxMysql.pool.getConnection((err: Error, conn: any) => {
+
+                        clearTimeout(timeout);
 
                         if (err) {
 
@@ -229,6 +266,7 @@ export class PhanxMysql {
 
                             return;
                         }
+
 
                         this.generateGuid();
                         this._openedTimestamp = Util.getTimestamp();
@@ -554,7 +592,7 @@ export class PhanxMysql {
      * </pre>
      *
      * @param {string} table - table name
-     * @param {any} row (optional) - object of key/value column name/values.
+     * @param {any} values (optional) - object of key/value column name/values.
      * @returns {PhanxInsert}
      */
     public insert(table:string, values:any=null):PhanxInsert {
@@ -600,7 +638,7 @@ export class PhanxMysql {
      * </pre>
      *
      * @param {string} table - table name
-     * @param {any} row - object of key/value column name/values.
+     * @param {any} values - object of key/value column name/values.
      * @returns {Promise<number>} - newly inserted id
      */
     public insertAndRun(table:string, values:any):Promise<number> {
@@ -990,8 +1028,10 @@ export class PhanxInsert {
             sql += "(" + questionMarkTemplate + "),";
 
             for (let key in row) {
-                let value:any = row[key];
-                params.push(value);
+                if (row.hasOwnProperty(key)) {
+                    let value: any = row[key];
+                    params.push(value);
+                }
             }
 
         }
@@ -1114,8 +1154,10 @@ export class PhanxUpdate {
         let sql:string = "update " + this.table + " set ";
 
         for (let key in this.valuesToSave) {
-            sql += key + "=? ,";
-            params.push(this.valuesToSave[key]);
+            if (this.valuesToSave.hasOwnProperty(key)) {
+                sql += key + "=? ,";
+                params.push(this.valuesToSave[key]);
+            }
         }
 
         //remove last comma if there is one
@@ -1134,8 +1176,10 @@ export class PhanxUpdate {
                 sql += " where ";
 
                 for (let key in this.where) {
-                    sql += key + "=? AND ";
-                    params.push(this.where[key]);
+                    if (this.where.hasOwnProperty(key)) {
+                        sql += key + "=? AND ";
+                        params.push(this.where[key]);
+                    }
                 }
 
                 if (sql.substr(sql.length - 5) == " AND ")
@@ -1177,11 +1221,12 @@ export class PhanxUpdate {
 //##############################################################################
 
 export interface IDbConfig {
-    usePool:boolean,
+    usePool?:boolean,
+    poolTimeout?:30,
     mysql:IMysqlConfig,
-    autoCloseMinutes:number,
-    useNamedParamsQueryFormat:boolean,
-    showDebugTraces:boolean
+    autoCloseMinutes?:number,
+    useNamedParamsQueryFormat?:boolean,
+    showDebugTraces?:boolean
 }
 export interface IMysqlConfig {
     host:string;
@@ -1190,7 +1235,7 @@ export interface IMysqlConfig {
     password:string;
     connectionLimit:number;
     multipleStatements?:boolean;
-    queryFormat:(query: string, values: any)=> string;
+    queryFormat?:(query: string, values: any)=> string;
     connectionTimeout?:number;
     timezone?: string;
 }

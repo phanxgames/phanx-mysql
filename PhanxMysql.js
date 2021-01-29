@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PhanxUpdate = exports.PhanxInsert = exports.PhanxMysql = void 0;
 const dictionaryjs_1 = require("dictionaryjs");
 const Mysql = require("mysql");
 const Util_1 = require("./Util");
@@ -90,6 +91,8 @@ class PhanxMysql {
     static setAutoCloseMinutes(minutes) {
         if (PhanxMysql.auto_closer_interval != null)
             clearInterval(PhanxMysql.auto_closer_interval);
+        if (minutes == null || !Util_1.Util.isNumeric(minutes))
+            minutes = 0;
         PhanxMysql.auto_closer_minutes = minutes;
         let enabled = (minutes > 0);
         if (enabled) {
@@ -98,7 +101,7 @@ class PhanxMysql {
                 let counter = 0;
                 for (let db of PhanxMysql.openConnections) {
                     counter++;
-                    if (db.opened) {
+                    if (db != null && db.opened) {
                         let minutes = Util_1.Util.getTimeDiff(db.openedTime, "min");
                         if (minutes > PhanxMysql.auto_closer_minutes) {
                             outlog += "\n[" + db.guid + "] Db Opened : " + minutes +
@@ -154,6 +157,9 @@ class PhanxMysql {
         if (config.useNamedParamsQueryFormat) {
             config.mysql.queryFormat = this._namedParamQueryFormatter;
         }
+        if (config.poolTimeout == null) {
+            config.poolTimeout = 30;
+        }
         return config;
     }
     usesPool() {
@@ -175,7 +181,30 @@ class PhanxMysql {
                 if (this.usesPool()) {
                     if (PhanxMysql.pool == null)
                         PhanxMysql.pool = Mysql.createPool(this.config.mysql);
+                    let timeout = setTimeout(() => {
+                        console.log("---------------------------------");
+                        console.error("Timeout getting connection from pool after " +
+                            this.config.poolTimeout + " seconds. " +
+                            PhanxMysql.openConnections.size() +
+                            " Connections left open. Please close connections after use," +
+                            " or enable \"autoCloseMinutes\".");
+                        if (PhanxMysql.openConnections.size() >= 1) {
+                            if (PhanxMysql.dbConfig.showDebugTraces) {
+                                for (let db of PhanxMysql.openConnections) {
+                                    if (db == null)
+                                        continue;
+                                    let minutes = Util_1.Util.getTimeDiff(db.openedTime, "min");
+                                    console.log("\n[" + db.guid + "] Db Opened : " + minutes +
+                                        " minutes\n" + db.startStack + "\n");
+                                }
+                            }
+                            else {
+                                console.log("Enable \"showDebugTraces\" in config to see full stack trace on open connections.");
+                            }
+                        }
+                    }, this.config.poolTimeout * 1000);
                     PhanxMysql.pool.getConnection((err, conn) => {
+                        clearTimeout(timeout);
                         if (err) {
                             console.error("Problem getting database connection from pool:\n", this._errorStack, "\n", err);
                             this.handleCallback(cb, resolve, reject, err);
@@ -390,7 +419,7 @@ class PhanxMysql {
      * </pre>
      *
      * @param {string} table - table name
-     * @param {any} row (optional) - object of key/value column name/values.
+     * @param {any} values (optional) - object of key/value column name/values.
      * @returns {PhanxInsert}
      */
     insert(table, values = null) {
@@ -432,7 +461,7 @@ class PhanxMysql {
      * </pre>
      *
      * @param {string} table - table name
-     * @param {any} row - object of key/value column name/values.
+     * @param {any} values - object of key/value column name/values.
      * @returns {Promise<number>} - newly inserted id
      */
     insertAndRun(table, values) {
@@ -756,8 +785,10 @@ class PhanxInsert {
                 //place question marks
                 sql += "(" + questionMarkTemplate + "),";
                 for (let key in row) {
-                    let value = row[key];
-                    params.push(value);
+                    if (row.hasOwnProperty(key)) {
+                        let value = row[key];
+                        params.push(value);
+                    }
                 }
             }
             //remove last comma if there is one
@@ -850,8 +881,10 @@ class PhanxUpdate {
             let params = [];
             let sql = "update " + this.table + " set ";
             for (let key in this.valuesToSave) {
-                sql += key + "=? ,";
-                params.push(this.valuesToSave[key]);
+                if (this.valuesToSave.hasOwnProperty(key)) {
+                    sql += key + "=? ,";
+                    params.push(this.valuesToSave[key]);
+                }
             }
             //remove last comma if there is one
             if (sql.substr(sql.length - 1) == ",")
@@ -866,8 +899,10 @@ class PhanxUpdate {
                 else {
                     sql += " where ";
                     for (let key in this.where) {
-                        sql += key + "=? AND ";
-                        params.push(this.where[key]);
+                        if (this.where.hasOwnProperty(key)) {
+                            sql += key + "=? AND ";
+                            params.push(this.where[key]);
+                        }
                     }
                     if (sql.substr(sql.length - 5) == " AND ")
                         sql = sql.substr(0, sql.length - 5);

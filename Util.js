@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Util = void 0;
 class Util {
     static generateToken(length, collection) {
         let found = false;
@@ -113,6 +114,9 @@ class Util {
     }
     static isObject(val) {
         return val != null && typeof val === 'object' && Array.isArray(val) === false;
+    }
+    static isNumeric(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
     }
 }
 exports.Util = Util;
