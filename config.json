@@ -1,12 +1,14 @@
 {
   "mysql": {
     "host": "127.0.0.1",
+    "port": 3306,
     "database": "schema_name",
     "user": "db_username",
     "password": "db_password",
     "connectionLimit": 10
   },
   "usePool":true,
+  "poolTimeout": 30,
   "autoCloseMinutes":0,
   "useNamedParamsQueryFormat":true,
   "showDebugTraces": false
