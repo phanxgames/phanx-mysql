@@ -311,6 +311,9 @@ await db.updateAndRun("test", "id=?", [1], {name:"Tester"});
 
 ## Change Log
 
+<b>0.3.9</b>
+* Critical Bug Fixed: Memory leak in the unique guid key generator. Keys will no longer remain in memory.
+
 <b>0.3.3</b>
 * Fixed bug with insert and update returned results (newly inserted id and rows affected).
 

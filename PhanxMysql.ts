@@ -385,6 +385,7 @@ export class PhanxMysql {
                 this._client.release();
 
                 PhanxMysql.openConnections.remove(this._guid);
+                PhanxMysql.dictTokens.remove(this._guid);
 
                 this._client = null;
                 this._openedTimestamp = 0;
@@ -406,6 +407,7 @@ export class PhanxMysql {
                     }
 
                     PhanxMysql.openConnections.remove(this._guid);
+                    PhanxMysql.dictTokens.remove(this._guid);
 
                     this._client = null;
                     this._openedTimestamp = 0;
