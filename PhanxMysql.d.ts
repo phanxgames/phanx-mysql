@@ -21,7 +21,7 @@ export declare class PhanxMysql {
     static set config(config: IDbConfig);
     static createAndStart(options?: IDbConfig): Promise<PhanxMysql>;
     static closeAll(cb?: Function): Promise<any>;
-    static closePool(cb?: Function): Promise<any>;
+    static closePool(cb?: Function): Promise<void>;
     static setAutoCloseMinutes(minutes: number): void;
     /**
      * Formats values to be used safely within queries.
@@ -228,7 +228,7 @@ export declare class PhanxMysql {
      * @param {Function} cbComplete
      * @returns {Promise<any>}
      */
-    asyncForEach(cbIterator: Function, cbComplete?: Function): Promise<null>;
+    asyncForEach(cbIterator: Function, cbComplete?: Function): Promise<void>;
     /**
      * Returns the string of the SQL statement with the parameters
      *   in place of the question marks.
@@ -376,6 +376,7 @@ export interface IDbConfig {
     autoCloseMinutes?: number;
     useNamedParamsQueryFormat?: boolean;
     showDebugTraces?: boolean;
+    showConnectionLeftOpenTrace?: boolean;
 }
 export interface IMysqlConfig {
     host: string;

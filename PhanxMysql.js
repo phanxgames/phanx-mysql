@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PhanxUpdate = exports.PhanxInsert = exports.PhanxMysql = void 0;
 const dictionaryjs_1 = require("dictionaryjs");
 const Mysql = require("mysql");
 const Util_1 = require("./Util");
@@ -71,8 +72,8 @@ class PhanxMysql {
             let pool = PhanxMysql.pool;
             if (pool != null) {
                 pool.end((err) => {
-                    if (PhanxMysql.dbConfig.showDebugTraces)
-                        console.log("pool closed");
+                    //if (PhanxMysql.dbConfig.showDebugTraces)
+                    //    console.log("pool closed");
                     console.error(err);
                     if (cb != null)
                         cb(err);
@@ -188,7 +189,8 @@ class PhanxMysql {
                             " Connections left open. Please close connections after use," +
                             " or enable \"autoCloseMinutes\".");
                         if (PhanxMysql.openConnections.size() >= 1) {
-                            if (PhanxMysql.dbConfig.showDebugTraces) {
+                            if (PhanxMysql.dbConfig.showDebugTraces ||
+                                PhanxMysql.dbConfig.showConnectionLeftOpenTrace) {
                                 for (let db of PhanxMysql.openConnections) {
                                     if (db == null)
                                         continue;
@@ -198,7 +200,7 @@ class PhanxMysql {
                                 }
                             }
                             else {
-                                console.log("Enable \"showDebugTraces\" in config to see full stack trace on open connections.");
+                                console.log("Enable \"showDebugTraces\" or \"showConnectionLeftOpenTrace\" in config to see full stack trace on open connections.");
                             }
                         }
                     }, this.config.poolTimeout * 1000);
@@ -266,9 +268,10 @@ class PhanxMysql {
                 return;
             }
             if (this._openedTimestamp > 0) {
-                let elapsed = Util_1.Util.getTimeDiff(this._openedTimestamp, "ms");
-                if (this.config.showDebugTraces)
-                    console.log("Connection released after in use for " + elapsed + " ms.");
+                // if (this.config.showDebugTraces) {
+                //     let elapsed:number = Util.getTimeDiff(this._openedTimestamp, "ms");
+                //     console.log("Connection released after in use for " + elapsed + " ms.");
+                // }
             }
             if (this._client == null) {
                 this.handleCallback(cb, resolve);
@@ -357,8 +360,8 @@ class PhanxMysql {
                     });
                     return;
                 }
-                if (this.config.showDebugTraces)
-                    console.log("Query completed in " + elapsed + " seconds.");
+                //if (this.config.showDebugTraces)
+                //    console.log("Query completed in " + elapsed + " seconds.");
                 //result = result as Object;
                 if (Array.isArray(result))
                     this._result = result;

@@ -66,7 +66,7 @@ export class PhanxMysql {
 
     }
 
-    public static closePool(cb:Function=null):Promise<any> {
+    public static closePool(cb:Function=null):Promise<void> {
 
         return new Promise((resolve,reject)=> {
 
@@ -76,8 +76,8 @@ export class PhanxMysql {
 
                 pool.end((err)=> {
 
-                    if (PhanxMysql.dbConfig.showDebugTraces)
-                        console.log("pool closed");
+                    //if (PhanxMysql.dbConfig.showDebugTraces)
+                    //    console.log("pool closed");
 
                     console.error(err);
 
@@ -233,7 +233,9 @@ export class PhanxMysql {
                             " Connections left open. Please close connections after use," +
                             " or enable \"autoCloseMinutes\".");
                         if (PhanxMysql.openConnections.size() >= 1) {
-                            if (PhanxMysql.dbConfig.showDebugTraces) {
+                            if (PhanxMysql.dbConfig.showDebugTraces ||
+                                PhanxMysql.dbConfig.showConnectionLeftOpenTrace)
+                            {
 
                                 for (let db of  PhanxMysql.openConnections)
                                 {
@@ -246,7 +248,7 @@ export class PhanxMysql {
 
                                 }
                             } else {
-                                console.log("Enable \"showDebugTraces\" in config to see full stack trace on open connections.");
+                                console.log("Enable \"showDebugTraces\" or \"showConnectionLeftOpenTrace\" in config to see full stack trace on open connections.");
                             }
                         }
 
@@ -366,11 +368,10 @@ export class PhanxMysql {
 
             if (this._openedTimestamp > 0) {
 
-                let elapsed:number = Util.getTimeDiff(this._openedTimestamp, "ms");
-
-                if (this.config.showDebugTraces)
-                    console.log("Connection released after in use for " + elapsed + " ms.");
-
+                // if (this.config.showDebugTraces) {
+                //     let elapsed:number = Util.getTimeDiff(this._openedTimestamp, "ms");
+                //     console.log("Connection released after in use for " + elapsed + " ms.");
+                // }
             }
 
             if (this._client == null) {
@@ -509,8 +510,8 @@ export class PhanxMysql {
                     return;
                 }
 
-                if (this.config.showDebugTraces)
-                    console.log("Query completed in " + elapsed + " seconds.");
+                //if (this.config.showDebugTraces)
+                //    console.log("Query completed in " + elapsed + " seconds.");
 
                 //result = result as Object;
 
@@ -804,7 +805,7 @@ export class PhanxMysql {
      * @param {Function} cbComplete
      * @returns {Promise<any>}
      */
-    public asyncForEach(cbIterator:Function, cbComplete:Function=null):Promise<null> {
+    public asyncForEach(cbIterator:Function, cbComplete:Function=null):Promise<void> {
 
         return new Promise((resolve) => {
 
@@ -1228,7 +1229,8 @@ export interface IDbConfig {
     mysql:IMysqlConfig,
     autoCloseMinutes?:number,
     useNamedParamsQueryFormat?:boolean,
-    showDebugTraces?:boolean
+    showDebugTraces?:boolean,
+    showConnectionLeftOpenTrace?:boolean
 }
 export interface IMysqlConfig {
     host:string;

@@ -311,6 +311,10 @@ await db.updateAndRun("test", "id=?", [1], {name:"Tester"});
 
 ## Change Log
 
+<b>0.3.10</b>
+* Improved debug tracing to not be as noisy.
+* Added a new config.json property "showConnectionLeftOpenTrace" to only report when connections are left open. This will be enabled by default.
+
 <b>0.3.9</b>
 * Critical Bug Fixed: Memory leak in the unique guid key generator. Keys will no longer remain in memory.
 

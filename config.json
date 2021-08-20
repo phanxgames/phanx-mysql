@@ -11,5 +11,6 @@
   "poolTimeout": 30,
   "autoCloseMinutes":0,
   "useNamedParamsQueryFormat":true,
-  "showDebugTraces": false
+  "showDebugTraces": false,
+  "showConnectionLeftOpenTrace": true
 }
