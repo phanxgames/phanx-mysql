@@ -11,8 +11,8 @@ MySQL database wrapper that provides async/await promises.
 
 ### requirements
 
-* ECMAScript 2016 (ES6)
-* Node.JS 6.x or later (tested on 6.11)
+* ECMAScript 6 (ES6)
+* Node.JS 6.x or later (tested last on 11.4)
 
 ### install
 
@@ -311,6 +311,9 @@ await db.updateAndRun("test", "id=?", [1], {name:"Tester"});
 
 ## Change Log
 
+<b>0.3.11</b>
+* Updated dependency versions.
+
 <b>0.3.10</b>
 * Improved debug tracing to not be as noisy.
 * Added a new config.json property "showConnectionLeftOpenTrace" to only report when connections are left open. This will be enabled by default.
@@ -331,8 +334,6 @@ await db.updateAndRun("test", "id=?", [1], {name:"Tester"});
 * Query's now support named params in addition to question marks. See Named Params section above.
 * Insert helper's run() method now returns the newly inserted row ID.
 * Update helper's run() method now returns the number of records affected.
-
-
 
 <b>0.2.0</b>
 * Insert and Update methods to help write insert and update queries quickly.
