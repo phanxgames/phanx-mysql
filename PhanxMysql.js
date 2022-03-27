@@ -368,6 +368,7 @@ class PhanxMysql {
                 else
                     this._result = [result];
                 this._resultCount = this._result.length;
+                this.handleCallbackRegistration('query', sql, paras);
                 this.handleCallback(cb, resolve, reject, null, this._result, () => {
                     resolve(this._result);
                 });
@@ -680,6 +681,57 @@ class PhanxMysql {
             }
             else
                 resolve(result);
+        }
+    }
+    handleCallbackRegistration(source, sql, paras = null) {
+        var _a, _b, _c, _d, _e, _f, _g;
+        let cbRegs = (_a = this.config) === null || _a === void 0 ? void 0 : _a.callbackRegistrations;
+        if (cbRegs == null) {
+            return;
+        }
+        sql = sql.toLowerCase();
+        sql = sql.trim();
+        let operation = "";
+        let table = "";
+        let arrSqlParts = sql.split(" ");
+        switch (source == "query" ? arrSqlParts[0] : source) {
+            case "update":
+                operation = arrSqlParts[0];
+                table = arrSqlParts[1];
+                break;
+            case "insert":
+                operation = arrSqlParts[0];
+                //into
+                table = arrSqlParts[2];
+                break;
+            case "delete":
+                operation = arrSqlParts[0];
+                let i = 0;
+                let lastWord;
+                for (let word of arrSqlParts) {
+                    if (lastWord == "from") {
+                        table = word;
+                        break;
+                    }
+                    i++;
+                    lastWord = word;
+                }
+                break;
+        }
+        let cbFunction;
+        switch (operation) {
+            case "update":
+                cbFunction = (_c = (_b = this.config) === null || _b === void 0 ? void 0 : _b.callbackRegistrations) === null || _c === void 0 ? void 0 : _c.cbUpdate;
+                break;
+            case "insert":
+                cbFunction = (_e = (_d = this.config) === null || _d === void 0 ? void 0 : _d.callbackRegistrations) === null || _e === void 0 ? void 0 : _e.cbInsert;
+                break;
+            case "delete":
+                cbFunction = (_g = (_f = this.config) === null || _f === void 0 ? void 0 : _f.callbackRegistrations) === null || _g === void 0 ? void 0 : _g.cbDelete;
+                break;
+        }
+        if (cbFunction != null) {
+            cbFunction(table, sql, paras);
         }
     }
     /**

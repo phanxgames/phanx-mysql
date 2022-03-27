@@ -522,10 +522,16 @@ export class PhanxMysql {
 
                 this._resultCount = this._result.length;
 
+
+
+                this.handleCallbackRegistration('query', sql, paras);
+
                 this.handleCallback(cb, resolve, reject, null, this._result,
                     ()=> {
                         resolve(this._result);
                     });
+
+
 
 
             });
@@ -905,6 +911,76 @@ export class PhanxMysql {
         }
     }
 
+    private  handleCallbackRegistration(source:string,
+                                             sql:string, paras:any|Array<any>=null)
+    :void
+    {
+        let cbRegs:ICallbackRegistrations = this.config?.callbackRegistrations;
+
+        if (cbRegs == null) {
+            return;
+        }
+
+        sql = sql.toLowerCase();
+        sql = sql.trim();
+
+        let operation:string = "";
+        let table:string = "";
+
+        let arrSqlParts:Array<string> = sql.split(" ");
+
+
+
+        switch (source=="query"?arrSqlParts[0]:source)
+        {
+            case "update":
+                operation = arrSqlParts[0];
+                table = arrSqlParts[1];
+                break;
+            case "insert":
+                operation = arrSqlParts[0];
+                //into
+                table = arrSqlParts[2];
+                break;
+            case "delete":
+                operation = arrSqlParts[0];
+
+                let i:number = 0;
+                let lastWord:string ;
+                for (let word of arrSqlParts)
+                {
+                    if (lastWord == "from") {
+                        table = word;
+                        break;
+                    }
+                    i++;
+                    lastWord = word;
+                }
+
+                break;
+        }
+
+        let cbFunction:Function ;
+
+        switch (operation) {
+            case "update":
+                cbFunction = this.config?.callbackRegistrations?.cbUpdate;
+                break;
+            case "insert":
+                cbFunction = this.config?.callbackRegistrations?.cbInsert;
+                break;
+            case "delete":
+                cbFunction = this.config?.callbackRegistrations?.cbDelete;
+                break;
+        }
+
+        if (cbFunction!=null) {
+            cbFunction(table, sql, paras);
+        }
+
+
+    }
+
     /**
      * Generates a unique guid and stores it to this connection.
      *
@@ -1230,8 +1306,16 @@ export interface IDbConfig {
     autoCloseMinutes?:number,
     useNamedParamsQueryFormat?:boolean,
     showDebugTraces?:boolean,
-    showConnectionLeftOpenTrace?:boolean
+    showConnectionLeftOpenTrace?:boolean,
+    callbackRegistrations?:ICallbackRegistrations
 }
+export interface ICallbackRegistrations {
+    cbInsert?:Function,
+    cbUpdate?:Function,
+    cbDelete?:Function,
+    cbQuery?:Function
+}
+
 export interface IMysqlConfig {
     host:string;
     port?:number,

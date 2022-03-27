@@ -256,6 +256,7 @@ export declare class PhanxMysql {
      * @param {Function} cbResume - (optional) cb() to resolve from callback
      */
     private handleCallback;
+    private handleCallbackRegistration;
     /**
      * Generates a unique guid and stores it to this connection.
      *
@@ -377,6 +378,13 @@ export interface IDbConfig {
     useNamedParamsQueryFormat?: boolean;
     showDebugTraces?: boolean;
     showConnectionLeftOpenTrace?: boolean;
+    callbackRegistrations?: ICallbackRegistrations;
+}
+export interface ICallbackRegistrations {
+    cbInsert?: Function;
+    cbUpdate?: Function;
+    cbDelete?: Function;
+    cbQuery?: Function;
 }
 export interface IMysqlConfig {
     host: string;
