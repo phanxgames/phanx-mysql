@@ -451,10 +451,12 @@ export class PhanxMysql {
      * @param {string} sql
      * @param {number|string|Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,result:Array<any>,cbResume?:Function)
+     * @param {any} context - (optional) your custom context passed through to the callbackRegistrations
      * @returns {Promise<any>} - result:Array<any>
      */
     public query(sql:string, paras:any|Array<any>=null,
-                 cb:(err:any,result?:Array<any>,cbResume?:Function)=>void=null)
+                 cb:(err:any,result?:Array<any>,cbResume?:Function)=>void=null,
+                 context:any=null)
                 :Promise<any>
     {
 
@@ -524,7 +526,7 @@ export class PhanxMysql {
 
 
 
-                this.handleCallbackRegistration('query', sql, paras);
+                this.handleCallbackRegistration('query', sql, paras, context);
 
                 this.handleCallback(cb, resolve, reject, null, this._result,
                     ()=> {
@@ -604,7 +606,8 @@ export class PhanxMysql {
      * @param {any} values (optional) - object of key/value column name/values.
      * @returns {PhanxInsert}
      */
-    public insert(table:string, values:any=null):PhanxInsert {
+    public insert(table:string, values:any=null):PhanxInsert
+    {
         return new PhanxInsert(this, table, values);
     }
 
@@ -648,10 +651,12 @@ export class PhanxMysql {
      *
      * @param {string} table - table name
      * @param {any} values - object of key/value column name/values.
+     * @param {any} context (optional) - your custom context passed through to the callbackRegistrations
      * @returns {Promise<number>} - newly inserted id
      */
-    public insertAndRun(table:string, values:any):Promise<number> {
-        return (this.insert(table,values)).run();
+    public insertAndRun(table:string, values:any,
+                        context:any=null):Promise<number> {
+        return (this.insert(table,values)).run(context);
     }
 
     /**
@@ -670,12 +675,15 @@ export class PhanxMysql {
      * @param {Array<any>} whereParams (optional) used with where as string
      *                              to replace the ? params you may use.
      * @param {any} values (optional) - column/value pair object to set values
+     * @param {any} context (optional) - your custom context passed through to the callbackRegistrations
      * @returns {Promise<number>} - number of rows affected
      */
     public updateAndRun(table:string, where:any,
-                        whereParams:Array<any>=null, values:any=null):Promise<number>
+                        whereParams:Array<any>=null, values:any=null,
+                        context:any=null
+                        ):Promise<number>
     {
-        return (this.update(table, where, whereParams, values)).run();
+        return (this.update(table, where, whereParams, values)).run(context);
     }
 
     //#########################################################
@@ -912,7 +920,9 @@ export class PhanxMysql {
     }
 
     private  handleCallbackRegistration(source:string,
-                                             sql:string, paras:any|Array<any>=null)
+                                        sql:string,
+                                        paras:any|Array<any>=null,
+                                        context:any=null)
     :void
     {
         let cbRegs:ICallbackRegistrations = this.config?.callbackRegistrations;
@@ -975,7 +985,7 @@ export class PhanxMysql {
         }
 
         if (cbFunction!=null) {
-            cbFunction(table, operation, sql, paras);
+            cbFunction(table, operation, sql, paras, context);
         }
 
 
@@ -1082,7 +1092,7 @@ export class PhanxInsert {
      * Finalizes the insert query and executes it.
      * @returns {Promise<number>} - returns newly inserted ID
      */
-    public async finalize():Promise<number> {
+    public async finalize(context:any=null):Promise<number> {
 
         if (this.valuesToSave == null || this.valuesToSave.length == 0) {
             throw new Error("No rows were provided to be inserted.");
@@ -1119,7 +1129,7 @@ export class PhanxInsert {
         if (sql.substr(sql.length-1) == ",")
             sql = sql.substr(0,sql.length-1);
 
-        let result:any = await this.db.query(sql,params);
+        let result:any = await this.db.query(sql,params,null,context);
 
         if (Array.isArray(result) && result.length > 0)
             result = result[0];
@@ -1141,8 +1151,8 @@ export class PhanxInsert {
      * @alias finalize
      * @returns {Promise<any>}
      */
-    public async run():Promise<any> {
-        return this.finalize();
+    public async run(context:any=null):Promise<any> {
+        return this.finalize(context);
     }
 
     private createNewValueRow():void {
@@ -1221,7 +1231,7 @@ export class PhanxUpdate {
      * Finalizes the insert query and executes it.
      * @returns {Promise<number>} - number of affected rows
      */
-    public async finalize():Promise<number> {
+    public async finalize(context:any=null):Promise<number> {
 
         if (this.valuesToSave == null) {
             throw new Error("No values were provided to be updated.");
@@ -1268,7 +1278,7 @@ export class PhanxUpdate {
 
 
 
-        let result:any = await this.db.query(sql,params);
+        let result:any = await this.db.query(sql,params,null,context);
 
         if (Array.isArray(result) && result.length > 0)
             result = result[0];
@@ -1290,8 +1300,8 @@ export class PhanxUpdate {
      * @alias finalize
      * @returns {Promise<any>}
      */
-    public async run():Promise<any> {
-        return this.finalize();
+    public async run(context:any=null):Promise<any> {
+        return this.finalize(context);
     }
 
 }

@@ -63,9 +63,10 @@ export declare class PhanxMysql {
      * @param {string} sql
      * @param {number|string|Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,result:Array<any>,cbResume?:Function)
+     * @param {any} context - (optional) your custom context passed through to the callbackRegistrations
      * @returns {Promise<any>} - result:Array<any>
      */
-    query(sql: string, paras?: any | Array<any>, cb?: (err: any, result?: Array<any>, cbResume?: Function) => void): Promise<any>;
+    query(sql: string, paras?: any | Array<any>, cb?: (err: any, result?: Array<any>, cbResume?: Function) => void, context?: any): Promise<any>;
     /**
      * Select the first row from query.
      *
@@ -131,9 +132,10 @@ export declare class PhanxMysql {
      *
      * @param {string} table - table name
      * @param {any} values - object of key/value column name/values.
+     * @param {any} context (optional) - your custom context passed through to the callbackRegistrations
      * @returns {Promise<number>} - newly inserted id
      */
-    insertAndRun(table: string, values: any): Promise<number>;
+    insertAndRun(table: string, values: any, context?: any): Promise<number>;
     /**
      * Calls update method and runs automatically.
      * Usage:
@@ -150,9 +152,10 @@ export declare class PhanxMysql {
      * @param {Array<any>} whereParams (optional) used with where as string
      *                              to replace the ? params you may use.
      * @param {any} values (optional) - column/value pair object to set values
+     * @param {any} context (optional) - your custom context passed through to the callbackRegistrations
      * @returns {Promise<number>} - number of rows affected
      */
-    updateAndRun(table: string, where: any, whereParams?: Array<any>, values?: any): Promise<number>;
+    updateAndRun(table: string, where: any, whereParams?: Array<any>, values?: any, context?: any): Promise<number>;
     /**
      * Transaction Begin Helper method.
      *
@@ -307,7 +310,7 @@ export declare class PhanxInsert {
      * Finalizes the insert query and executes it.
      * @returns {Promise<number>} - returns newly inserted ID
      */
-    finalize(): Promise<number>;
+    finalize(context?: any): Promise<number>;
     /**
      * @alias finalize
      * @returns {Promise<any>}
@@ -317,7 +320,7 @@ export declare class PhanxInsert {
      * @alias finalize
      * @returns {Promise<any>}
      */
-    run(): Promise<any>;
+    run(context?: any): Promise<any>;
     private createNewValueRow;
 }
 export declare class PhanxUpdate {
@@ -358,7 +361,7 @@ export declare class PhanxUpdate {
      * Finalizes the insert query and executes it.
      * @returns {Promise<number>} - number of affected rows
      */
-    finalize(): Promise<number>;
+    finalize(context?: any): Promise<number>;
     /**
      * @alias finalize
      * @returns {Promise<any>}
@@ -368,7 +371,7 @@ export declare class PhanxUpdate {
      * @alias finalize
      * @returns {Promise<any>}
      */
-    run(): Promise<any>;
+    run(context?: any): Promise<any>;
 }
 export interface IDbConfig {
     usePool?: boolean;

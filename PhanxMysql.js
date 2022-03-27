@@ -324,9 +324,10 @@ class PhanxMysql {
      * @param {string} sql
      * @param {number|string|Array<any>} paras - (optional)
      * @param {Function} cb - (optional) cb(err:any,result:Array<any>,cbResume?:Function)
+     * @param {any} context - (optional) your custom context passed through to the callbackRegistrations
      * @returns {Promise<any>} - result:Array<any>
      */
-    query(sql, paras = null, cb = null) {
+    query(sql, paras = null, cb = null, context = null) {
         this._errorStack = new Error().stack;
         return new Promise((resolve, reject) => {
             this._resultCount = 0;
@@ -368,7 +369,7 @@ class PhanxMysql {
                 else
                     this._result = [result];
                 this._resultCount = this._result.length;
-                this.handleCallbackRegistration('query', sql, paras);
+                this.handleCallbackRegistration('query', sql, paras, context);
                 this.handleCallback(cb, resolve, reject, null, this._result, () => {
                     resolve(this._result);
                 });
@@ -467,10 +468,11 @@ class PhanxMysql {
      *
      * @param {string} table - table name
      * @param {any} values - object of key/value column name/values.
+     * @param {any} context (optional) - your custom context passed through to the callbackRegistrations
      * @returns {Promise<number>} - newly inserted id
      */
-    insertAndRun(table, values) {
-        return (this.insert(table, values)).run();
+    insertAndRun(table, values, context = null) {
+        return (this.insert(table, values)).run(context);
     }
     /**
      * Calls update method and runs automatically.
@@ -488,10 +490,11 @@ class PhanxMysql {
      * @param {Array<any>} whereParams (optional) used with where as string
      *                              to replace the ? params you may use.
      * @param {any} values (optional) - column/value pair object to set values
+     * @param {any} context (optional) - your custom context passed through to the callbackRegistrations
      * @returns {Promise<number>} - number of rows affected
      */
-    updateAndRun(table, where, whereParams = null, values = null) {
-        return (this.update(table, where, whereParams, values)).run();
+    updateAndRun(table, where, whereParams = null, values = null, context = null) {
+        return (this.update(table, where, whereParams, values)).run(context);
     }
     //#########################################################
     // Transaction Methods
@@ -683,7 +686,7 @@ class PhanxMysql {
                 resolve(result);
         }
     }
-    handleCallbackRegistration(source, sql, paras = null) {
+    handleCallbackRegistration(source, sql, paras = null, context = null) {
         var _a, _b, _c, _d, _e, _f, _g;
         let cbRegs = (_a = this.config) === null || _a === void 0 ? void 0 : _a.callbackRegistrations;
         if (cbRegs == null) {
@@ -731,7 +734,7 @@ class PhanxMysql {
                 break;
         }
         if (cbFunction != null) {
-            cbFunction(table, operation, sql, paras);
+            cbFunction(table, operation, sql, paras, context);
         }
     }
     /**
@@ -824,7 +827,7 @@ class PhanxInsert {
      * Finalizes the insert query and executes it.
      * @returns {Promise<number>} - returns newly inserted ID
      */
-    finalize() {
+    finalize(context = null) {
         return __awaiter(this, void 0, void 0, function* () {
             if (this.valuesToSave == null || this.valuesToSave.length == 0) {
                 throw new Error("No rows were provided to be inserted.");
@@ -850,7 +853,7 @@ class PhanxInsert {
             //remove last comma if there is one
             if (sql.substr(sql.length - 1) == ",")
                 sql = sql.substr(0, sql.length - 1);
-            let result = yield this.db.query(sql, params);
+            let result = yield this.db.query(sql, params, null, context);
             if (Array.isArray(result) && result.length > 0)
                 result = result[0];
             return result.insertId;
@@ -869,9 +872,9 @@ class PhanxInsert {
      * @alias finalize
      * @returns {Promise<any>}
      */
-    run() {
+    run(context = null) {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.finalize();
+            return this.finalize(context);
         });
     }
     createNewValueRow() {
@@ -929,7 +932,7 @@ class PhanxUpdate {
      * Finalizes the insert query and executes it.
      * @returns {Promise<number>} - number of affected rows
      */
-    finalize() {
+    finalize(context = null) {
         return __awaiter(this, void 0, void 0, function* () {
             if (this.valuesToSave == null) {
                 throw new Error("No values were provided to be updated.");
@@ -964,7 +967,7 @@ class PhanxUpdate {
                         sql = sql.substr(0, sql.length - 5);
                 }
             }
-            let result = yield this.db.query(sql, params);
+            let result = yield this.db.query(sql, params, null, context);
             if (Array.isArray(result) && result.length > 0)
                 result = result[0];
             return result.changedRows;
@@ -983,9 +986,9 @@ class PhanxUpdate {
      * @alias finalize
      * @returns {Promise<any>}
      */
-    run() {
+    run(context = null) {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.finalize();
+            return this.finalize(context);
         });
     }
 }
