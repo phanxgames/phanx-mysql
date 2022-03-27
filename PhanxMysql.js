@@ -731,7 +731,7 @@ class PhanxMysql {
                 break;
         }
         if (cbFunction != null) {
-            cbFunction(table, sql, paras);
+            cbFunction(table, operation, sql, paras);
         }
     }
     /**

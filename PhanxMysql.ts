@@ -975,7 +975,7 @@ export class PhanxMysql {
         }
 
         if (cbFunction!=null) {
-            cbFunction(table, sql, paras);
+            cbFunction(table, operation, sql, paras);
         }
 
 
