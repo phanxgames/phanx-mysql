@@ -11,7 +11,7 @@ export class PhanxMysql {
     private _client:any = null;
 
     //static
-    private static pool:any = null;
+    private static pools:Map<IMysqlConfig, any> = new Map<IMysqlConfig, any>();
     private static dbConfig:IDbConfig = null;
     private static dictTokens:Dictionary<string,boolean> = new Dictionary<string,boolean>();
     private static openConnections:Dictionary<string,PhanxMysql> =
@@ -66,11 +66,11 @@ export class PhanxMysql {
 
     }
 
-    public static closePool(cb:Function=null):Promise<void> {
+    public static closePool(connectionKey:IMysqlConfig, cb:Function=null):Promise<void> {
 
         return new Promise((resolve,reject)=> {
 
-            let pool = PhanxMysql.pool;
+            let pool = PhanxMysql.pools.get(connectionKey);
 
             if (pool != null) {
 
@@ -222,8 +222,11 @@ export class PhanxMysql {
 
                 if (this.usesPool()) {
 
-                    if (PhanxMysql.pool == null)
-                        PhanxMysql.pool = Mysql.createPool(this.config.mysql);
+                    let pool = PhanxMysql.pools.get(this.config.mysql);
+                    if (pool == null) {
+                        pool = Mysql.createPool(this.config.mysql);
+                        PhanxMysql.pools.set(this.config.mysql, pool);
+                    }
 
                     let timeout = setTimeout(()=> {
                         console.log("---------------------------------");
@@ -254,7 +257,7 @@ export class PhanxMysql {
 
                     }, this.config.poolTimeout*1000);
 
-                    PhanxMysql.pool.getConnection((err: Error, conn: any) => {
+                    pool.getConnection((err: Error, conn: any) => {
 
                         clearTimeout(timeout);
 

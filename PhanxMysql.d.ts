@@ -1,7 +1,7 @@
 export declare class PhanxMysql {
     private _config;
     private _client;
-    private static pool;
+    private static pools;
     private static dbConfig;
     private static dictTokens;
     private static openConnections;
@@ -21,7 +21,7 @@ export declare class PhanxMysql {
     static set config(config: IDbConfig);
     static createAndStart(options?: IDbConfig): Promise<PhanxMysql>;
     static closeAll(cb?: Function): Promise<any>;
-    static closePool(cb?: Function): Promise<void>;
+    static closePool(connectionKey: IMysqlConfig, cb?: Function): Promise<void>;
     static setAutoCloseMinutes(minutes: number): void;
     /**
      * Formats values to be used safely within queries.

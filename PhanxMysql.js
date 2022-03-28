@@ -67,9 +67,9 @@ class PhanxMysql {
                 cb();
         });
     }
-    static closePool(cb = null) {
+    static closePool(connectionKey, cb = null) {
         return new Promise((resolve, reject) => {
-            let pool = PhanxMysql.pool;
+            let pool = PhanxMysql.pools.get(connectionKey);
             if (pool != null) {
                 pool.end((err) => {
                     //if (PhanxMysql.dbConfig.showDebugTraces)
@@ -179,8 +179,11 @@ class PhanxMysql {
         return new Promise((resolve, reject) => {
             try {
                 if (this.usesPool()) {
-                    if (PhanxMysql.pool == null)
-                        PhanxMysql.pool = Mysql.createPool(this.config.mysql);
+                    let pool = PhanxMysql.pools.get(this.config.mysql);
+                    if (pool == null) {
+                        pool = Mysql.createPool(this.config.mysql);
+                        PhanxMysql.pools.set(this.config.mysql, pool);
+                    }
                     let timeout = setTimeout(() => {
                         console.log("---------------------------------");
                         console.error("Timeout getting connection from pool after " +
@@ -204,7 +207,7 @@ class PhanxMysql {
                             }
                         }
                     }, this.config.poolTimeout * 1000);
-                    PhanxMysql.pool.getConnection((err, conn) => {
+                    pool.getConnection((err, conn) => {
                         clearTimeout(timeout);
                         if (err) {
                             console.error("Problem getting database connection from pool:\n", this._errorStack, "\n", err);
@@ -774,7 +777,7 @@ class PhanxMysql {
 }
 exports.PhanxMysql = PhanxMysql;
 //static
-PhanxMysql.pool = null;
+PhanxMysql.pools = new Map();
 PhanxMysql.dbConfig = null;
 PhanxMysql.dictTokens = new dictionaryjs_1.Dictionary();
 PhanxMysql.openConnections = new dictionaryjs_1.Dictionary();
