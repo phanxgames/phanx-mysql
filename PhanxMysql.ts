@@ -232,10 +232,10 @@ export class PhanxMysql {
                         console.log("---------------------------------");
                         console.error("Timeout getting connection from pool after " +
                             this.config.poolTimeout + " seconds. " +
-                            PhanxMysql.openConnections.size() +
+                            PhanxMysql.openConnections.size +
                             " Connections left open. Please close connections after use," +
                             " or enable \"autoCloseMinutes\".");
-                        if (PhanxMysql.openConnections.size() >= 1) {
+                        if (PhanxMysql.openConnections.size >= 1) {
                             if (PhanxMysql.dbConfig.showDebugTraces ||
                                 PhanxMysql.dbConfig.showConnectionLeftOpenTrace)
                             {

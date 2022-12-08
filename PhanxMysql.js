@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PhanxUpdate = exports.PhanxInsert = exports.PhanxMysql = void 0;
 const dictionaryjs_1 = require("dictionaryjs");
@@ -35,7 +36,7 @@ class PhanxMysql {
          * @ignore
          * @internal
          */
-        this[Symbol.iterator] = function* () {
+        this[_a] = function* () {
             for (let row of this._result) {
                 yield row;
             }
@@ -188,10 +189,10 @@ class PhanxMysql {
                         console.log("---------------------------------");
                         console.error("Timeout getting connection from pool after " +
                             this.config.poolTimeout + " seconds. " +
-                            PhanxMysql.openConnections.size() +
+                            PhanxMysql.openConnections.size +
                             " Connections left open. Please close connections after use," +
                             " or enable \"autoCloseMinutes\".");
-                        if (PhanxMysql.openConnections.size() >= 1) {
+                        if (PhanxMysql.openConnections.size >= 1) {
                             if (PhanxMysql.dbConfig.showDebugTraces ||
                                 PhanxMysql.dbConfig.showConnectionLeftOpenTrace) {
                                 for (let db of PhanxMysql.openConnections) {
@@ -690,8 +691,8 @@ class PhanxMysql {
         }
     }
     handleCallbackRegistration(source, sql, paras = null, context = null) {
-        var _a, _b, _c, _d, _e, _f, _g;
-        let cbRegs = (_a = this.config) === null || _a === void 0 ? void 0 : _a.callbackRegistrations;
+        var _b, _c, _d, _e, _f, _g, _h;
+        let cbRegs = (_b = this.config) === null || _b === void 0 ? void 0 : _b.callbackRegistrations;
         if (cbRegs == null) {
             return;
         }
@@ -727,13 +728,13 @@ class PhanxMysql {
         let cbFunction;
         switch (operation) {
             case "update":
-                cbFunction = (_c = (_b = this.config) === null || _b === void 0 ? void 0 : _b.callbackRegistrations) === null || _c === void 0 ? void 0 : _c.cbUpdate;
+                cbFunction = (_d = (_c = this.config) === null || _c === void 0 ? void 0 : _c.callbackRegistrations) === null || _d === void 0 ? void 0 : _d.cbUpdate;
                 break;
             case "insert":
-                cbFunction = (_e = (_d = this.config) === null || _d === void 0 ? void 0 : _d.callbackRegistrations) === null || _e === void 0 ? void 0 : _e.cbInsert;
+                cbFunction = (_f = (_e = this.config) === null || _e === void 0 ? void 0 : _e.callbackRegistrations) === null || _f === void 0 ? void 0 : _f.cbInsert;
                 break;
             case "delete":
-                cbFunction = (_g = (_f = this.config) === null || _f === void 0 ? void 0 : _f.callbackRegistrations) === null || _g === void 0 ? void 0 : _g.cbDelete;
+                cbFunction = (_h = (_g = this.config) === null || _g === void 0 ? void 0 : _g.callbackRegistrations) === null || _h === void 0 ? void 0 : _h.cbDelete;
                 break;
         }
         if (cbFunction != null) {
@@ -776,6 +777,7 @@ class PhanxMysql {
     }
 }
 exports.PhanxMysql = PhanxMysql;
+_a = Symbol.iterator;
 //static
 PhanxMysql.pools = new Map();
 PhanxMysql.dbConfig = null;
